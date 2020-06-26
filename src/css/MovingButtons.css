@@ -1,0 +1,56 @@
+
+.FrontMovingButton {
+	display: inline-block;
+	margin: 5px 10px;
+	padding: 10px 15px;
+	position: absolute;
+	left: 0px;
+	top: 70%;
+	z-index: 10090008899878768765;
+	background-image: url("../images/buttons/front.png");
+	background-size: 100% 100%;
+	background-repeat: no-repeat;
+	height: 100px;
+	width: 100px;
+}
+.BackMovingButton {
+	display: inline-block;
+	margin: 5px 10px;
+	padding: 10px 15px;
+	position: absolute;
+	left: 0%;
+	top: 90%;
+	z-index: 10090008899878768765;
+	background-image: url("../images/buttons/back.png");
+	background-size: 100% 100%;
+	background-repeat: no-repeat;
+	height: 100px;
+	width: 100px;
+}
+.AccelerometerControlButton {
+	margin: 5px 10px;
+	padding: 10px 15px;
+	position: absolute;
+	right: 10%;
+	bottom: 10%;
+	z-index: 10090008899878768765;
+	background-image: url("../images/buttons/accelerometer.png");
+	background-size: 100% 100%;
+	background-repeat: no-repeat;
+	height: 100px;
+	width: 100px;
+
+}
+.TouchControlButton {
+	margin: 5px 10px;
+	padding: 10px 15px;
+	position: absolute;
+	right: 10%;
+	bottom: 10%;
+	z-index: 10090008899878768765;
+	background-image: url("../images/buttons/touch.png");
+	background-size: 100% 100%;
+	background-repeat: no-repeat;
+	height: 100px;
+	width: 100px;
+}

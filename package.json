@@ -1,0 +1,69 @@
+{
+  "name": "Reinforcement_Learning_Lab",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=8.9.0"
+  },
+  "dependencies": {
+    "@babel/node": "^7.10.1",
+    "@tensorflow/tfjs": "^2.0.1",
+    "@tensorflow/tfjs-core": "^2.0.1",
+    "@tensorflow/tfjs-node": "2.0.1",
+    "@tensorflow/tfjs-node-gpu": "2.0.1",
+    "babel-node": "^0.0.1-security",
+    "chai": "^4.2.0",
+    "express": "^4.17.1",
+    "jasmine": "^3.5.0",
+    "mocha": "^8.0.1",
+    "src": "^1.1.2",
+    "tfjs": "^0.6.0"
+  },
+  "scripts": {
+    "watch": "cross-env NODE_ENV=development parcel index.html --no-hmr --target browser --global window",
+    "build": "cross-env NODE_ENV=production parcel build index.html --target browser --out-dir build --public-url ./",
+    "test": "babel-node tests.js",
+    "lint": "eslint ."
+  },
+  "browser": {
+    "crypto": false
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "~6.26.0",
+    "babel-preset-env": "~1.6.1",
+    "clang-format": "~1.2.2",
+    "cross-env": "^7.0.2",
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.9.1",
+    "parcel-bundler": "~1.10.3",
+    "parcel-plugin-static-files-copy": "^2.4.3"
+  },
+  "eslintConfig": {
+    "extends": "google",
+    "rules": {
+      "require-jsdoc": 0,
+      "valid-jsdoc": 0
+    },
+    "env": {
+      "es6": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 8,
+      "sourceType": "module"
+    }
+  },
+  "eslintIgnore": [
+    "dist/"
+  ],
+  "staticFiles": {
+    "staticPath": "src/models",
+    "watcherGlob": "**"
+  },
+  "repository": "https://github.com/polyzer/q_deep_learn_tfjs.git",
+  "author": "polyzer <realpolyzer@yandex.ru>"
+}
