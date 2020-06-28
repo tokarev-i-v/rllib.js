@@ -12,6 +12,9 @@ describe("PPO Buffer testing", function(){
             [10,1,2,4,5],
         ], 0);
     
-        expect(a).toBe(true);
+        expect(b.adv).toBeInstanceOf(tf.Tensor);
+        expect(b.ob).toBeInstanceOf(tf.Tensor);
+        expect(b.ac).toBeInstanceOf(tf.Tensor);
+        expect(b.rtg).toBeInstanceOf(tf.Tensor);
       });
 });

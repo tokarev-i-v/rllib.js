@@ -24,8 +24,11 @@ const discounted_rewards = (rews, last_sv, gamma) => tf.tidy(()=>{
  * @param {*} lam 
  */
 const GAE = (rews, v, v_last, gamma=0.99, lam=0.95) => tf.tidy(()=>{
-    let vs = np.append(v, v_last)
-    let delta = np.array(rews) + gamma*vs[1:] - vs[:-1]
+    let vs = v.concat(tf.tensor([v_last]));
+    gamma = tf.scalar(gamma);
+    console.log(rews.shape, vs.slice([1], [vs.shape[0]-1]).mul(gamma).shape);
+    let delta = rews.add(vs.slice([1], [vs.shape[0]-1]).mul(gamma)).sub(vs.slice([0], [vs.shape[0]-1]));
+    console.log(delta)
     let gae_advantage = discounted_rewards(delta, 0, gamma*lam)
     return gae_advantage
 });
@@ -45,7 +48,7 @@ export class Buffer{
                 let tens = tf.tensor(temp_traj);
                 this.ob = this.ob.concat(tens.slice([0], [temp_traj.length,1]).flatten());
                 let rtg = discounted_rewards(tens.slice([0,1], [temp_traj.length,1]).flatten(), last_sv, this.gamma);
-                this.adv = this.adv.concat(GAE(tens.slice([0,1], [temp_traj.length,1]).flatten(), tens.slice([0,3], [2,1]).flatten(), last_sv, this.gamma, this.lam));
+                this.adv = this.adv.concat(GAE(tens.slice([0,1], [temp_traj.length,1]).flatten(), tens.slice([0,3], [temp_traj.length,1]).flatten(), last_sv, this.gamma, this.lam));
                 this.rtg = this.rtg.concat(rtg);
                 this.ac = this.ac.concat(tens.slice([0,2], [temp_traj.length,1]).flatten());    
             });
