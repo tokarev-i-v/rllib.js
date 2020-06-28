@@ -1,5 +1,5 @@
 {
-  "name": "Reinforcement_Learning_Lab",
+  "name": "rllib.js",
   "version": "0.1.0",
   "description": "",
   "main": "index.js",
@@ -25,7 +25,7 @@
   "scripts": {
     "watch": "cross-env NODE_ENV=development parcel index.html --no-hmr --target browser --global window",
     "build": "cross-env NODE_ENV=production parcel build index.html --target browser --out-dir build --public-url ./",
-    "test": "babel-node tests.js",
+    "test": "babel-node --inspect tests.js",
     "lint": "eslint ."
   },
   "browser": {
