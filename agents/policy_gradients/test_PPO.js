@@ -9,7 +9,10 @@ import {
     clipped_surrogate_obj, 
     discounted_rewards, 
     GAE, 
-    Buffer} from "./PPO";
+    Buffer,
+    PPO} from "./PPO";
+
+import {Agent} from "../../envs/FlatAreaWorld/FlatAreaEatWorld_c"
 
 describe("PPO Buffer testing", function(){
     let b = new Buffer();
@@ -141,4 +144,20 @@ describe("PPO Buffer testing", function(){
         
     // });
 
-    
+    describe("Continuous PPO function testing", function(){
+        let x = tf.tensor([[0.44671717286109924, -0.07409191131591797, 0.5582783222198486, -0.653685986995697, -0.08229169249534607, -0.2537800669670105]]);
+        let mean = tf.tensor([[0.44671717286109924, -0.07409191131591797, 0.5582783222198486, -0.653685986995697, -0.08229169249534607, -0.2537800669670105]]);
+        let log_std = tf.tensor([-0.5, -0.5, -0.5, -0.5, -0.5, -0.5]);
+        let ret =  get_p_log_cont(x, mean, log_std);
+        let expected_return = tf.tensor([-2.5136311054229736]);
+        console.log("get_p_log_cont OUTPUT:")
+        ret.print();
+        console.log("get_p_log_cont EXPECTED:")
+        expected_return.print();
+    });
+
+    describe("Continuous Agent testing", function(){
+        let a = new Agent({eyes_count: 10});
+        let s = a.sample_actions();
+        s.print();
+    });

@@ -188,10 +188,12 @@ function PPODiscrete(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_ep
     return;
 }
 
-function PPOContinuous(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
-    actor_iter=5, critic_iter=10, steps_per_env=100){
+function PPOContinuous(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, actor_iter=5, critic_iter=10, steps_per_env=100){
+    
         
-        return;
+    
+    
+    return;
 
 }
 

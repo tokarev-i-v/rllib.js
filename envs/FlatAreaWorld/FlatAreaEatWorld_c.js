@@ -1,7 +1,9 @@
-import * as THREE from '../src/jsm/three.module';
-import {ColladaLoader} from '../src/jsm/ColladaLoader';
-import {FlyControls} from '../src/jsm/FlyControls';
-import Stats from '../src/jsm/stats.module';
+import * as tf from '@tensorflow/tfjs-node';
+import * as THREE from '../../src/jsm/three.module';
+import {ColladaLoader} from '../../src/jsm/ColladaLoader';
+import {FlyControls} from '../../src/jsm/FlyControls';
+import Stats from '../../src/jsm/stats.module';
+import { op } from '@tensorflow/tfjs-node';
 var canvas, ctx;
 
 function getRandomArbitrary(min, max) {
@@ -12,6 +14,29 @@ function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min)) + min; //Максимум не включается, минимум включается
+}
+
+
+/**
+ * Class describe continuous R^n space.
+ */
+class BoxSpace {
+  constructor(min=-1, max=1, shape=3){
+    this.min = min;
+    this.max = max;
+    this.shape = shape;
+    this.value = tf.tensor(Array(shape).fill(0));
+  }
+  control(){
+    return tf.tidy(()=>{
+      return tf.keep(tf.clipByValue(rt, this.min, this.max));
+    });
+  }
+  sample(){
+    return tf.tidy(()=>{
+      return tf.keep(tf.randomUniform([this.shape]));
+    });
+  }
 }
 
 class Food {
@@ -66,7 +91,14 @@ class Poison {
   }
 }
 
-class Agent{
+/**
+ * Agent from this world;
+ */
+export class Agent{
+  /**
+   * 
+   * @param {Object} opt 
+   */
   constructor(opt){
     this.rad = 2;
     this._view = new THREE.Mesh(
@@ -74,17 +106,14 @@ class Agent{
       new THREE.MeshBasicMaterial({color: 0xFFAA11})
     );
     
-    this.actions = [];
-    this.actions.push([1,1]);
-    this.actions.push([0.8,1]);
-    this.actions.push([1,0.8]);
-    this.actions.push([0.5,0]);
-    this.actions.push([0,0.5]);
+
+    this.min_action = -1.0;
+    this.max_action = 1.0;
+
+    this.action_space = new BoxSpace(this.min_action,this.max_action,3 );
     this.eyes_count = opt.eyes_count;
 
-    // properties
     this.eyes = [];
-    /**star */
     let r = 20;
     let alpha = -30;
     /**Now we create agent's eyes*/
@@ -101,22 +130,21 @@ class Agent{
     }else {
       this._frontEye = this.eyes[Math.round(this.eyes.length/2)-1];
     }
-    // braaain
-    this.brain = new opt.algo({num_states: this.eyes.length * 3, num_actions: this.actions.length});
-    //var spec = document.getElementById('qspec').value;
-    //eval(spec);
-    //this.brain = brain;
+    if (opt.algo){
+      this.brain = new opt.algo({num_states: this.eyes.length * 3, num_actions: this.action_space.length});
+    }
     
     this.reward_bonus = 0.0;
     this.digestion_signal = 0.0;
     // outputs on world
     this.rot1 = 0.0; // rotation speed of 1st wheel
     this.rot2 = 0.0; // rotation speed of 2nd wheel
-    
-    this.prevactionix = -1;
-
+    this.speed = 0.0;
   }
   
+  sample_actions(){
+    return this.action_space.sample();
+  }
 
   forward() {
     // in forward pass the agent simply behaves in the environment
@@ -136,16 +164,13 @@ class Agent{
     }
     
     // get action from brain
-    var actionix = this.brain.forward(input_array);
-    var action = this.actions[actionix];
-    this.actionix = actionix; //back this up
+    var action = this.brain.forward(input_array).dataSync();
     
     // demultiplex into behavior variables
-    this.rot1 = action[0]*1;
-    this.rot2 = action[1]*1;
     
-    //this.rot1 = 0;
-    //this.rot2 = 0;
+    this.rot1 = action[0];
+    this.rot2 = action[1];
+    this.speed = action[2];
   }
 
   async backward() {
@@ -199,7 +224,7 @@ class Agent{
  * @class Eye
  * It presents as agent's eye detector.
  */
-class Eye{
+export class Eye{
   /**
    * 
    * @param {THREE.Vector3} agent_pos_vec Vector that would use as src
@@ -268,28 +293,20 @@ class Eye{
    * @class
    * World Contains all features.
    */
-export default class FlatAreaEatWorld {
+export class FlatAreaEatWorld {
     constructor(opt){
 
 
       this.init();
       this.agents = [];
-      // this.W = canvas.width;
-      // this.H = canvas.height;
 
       this.W = 200;
       this.H = 200;
 
       this.clock = 0;
       
-      // set up walls in the world
       this.walls = []; 
       var pad = 10;
-      // util_add_box(this.walls, pad, pad, this.W-pad*2, this.H-pad*2);
-      // util_add_box(this.walls, 100, 100, 200, 300); // inner walls
-      // this.walls.pop();
-      // util_add_box(this.walls, 400, 100, 200, 300);
-      // this.walls.pop();
       
 
       // set up food and poison
@@ -335,21 +352,12 @@ export default class FlatAreaEatWorld {
       this.Scene = new THREE.Scene();
       this.Scene.background = new THREE.Color( 0xaaccff );
       this.Scene.fog = new THREE.FogExp2( 0xaaccff, 0.007 );
-      //        this.Scene.add(this.Camera);
 
       this.Loader = new ColladaLoader();
-//        this.Loader.load("./src/scenes/telefermer.dae", function (dae) {
-//            dae.scene.scale.set(10,10,10);
-//            this.Scene.add(dae.scene);
-//        }.bind(this));
 
       this.AmbientLight = new THREE.AmbientLight(0xFFFFFF, 0.9);
       this.Scene.add(this.AmbientLight);
 
-      // this.ControlObject = this.Object;
-      // // this.Camera.position.set(-1, 1.2, -0.35);
-      // this.Scene.add(this.ControlObject);
-      // this.ControlObject.add(this.Camera);
       this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
       this.Controls.movementSpeed = 13;
       this.Controls.rollSpeed = Math.PI / 8;
@@ -370,20 +378,10 @@ export default class FlatAreaEatWorld {
     }
 
     render () {
-      //requestAnimationFrame(this.render);
       this.stats.update();
-      // this.ControlObject.position.y = 0;
       
       this.Renderer.render(this.Scene, this.Camera);
       var delta = this.Clock.getDelta();
-      // if(this.Controls.moveState.forward || this.Controls.moveState.back){
-      //     if (this.Mixer !== undefined ) {
-      //         this.Mixer.update(delta);
-      //     }
-      // }
-      // if (this.Mixer !== undefined ) {
-      //         this.Mixer.update(delta);
-      //     }
       
       this.Controls.update(delta);
   }
@@ -417,8 +415,6 @@ export default class FlatAreaEatWorld {
       this.tick().then(()=>{
         if(!this.skipdraw || this.clock % 50 === 0) {
           this.render();
-          //draw_stats();
-          //draw_net();
         }  
       })
     }
@@ -460,30 +456,13 @@ export default class FlatAreaEatWorld {
       // apply outputs of agents on evironment
       for(var i=0,n=this.agents.length;i<n;i++) {
         var a = this.agents[i];
-        a.op = a.position.clone(); // back up old position
-        a.oangle = a.angle; // and angle
-        // steer the agent according to outputs of wheel velocities
-        var v = new THREE.Vector3(0, a.rad / 2.0);
-        var rotat = new THREE.Matrix4().makeRotationZ(a.angle + Math.PI/2);
-        v = v.applyMatrix4(rotat);
-        var w1p = a.position.clone().add(v); // positions of wheel 1 and 2
-        var w2p =a.position.clone().sub(v);
-        var vv = a.position.clone().sub(w2p);
-        rotat = new THREE.Matrix4().makeRotationZ(-a.rot1);
-        vv = vv.applyMatrix4(rotat);
-        var vv2 = a.position.clone().sub(w1p);
-        rotat = new THREE.Matrix4().makeRotationZ(a.rot2);
-        vv2 = vv2.clone().applyMatrix4(rotat);
-        var np = w2p.clone().add(vv);
-        np.multiplyScalar(0.5);
-        var np2 = w1p.clone().add(vv2);
-        np2.multiplyScalar(0.5);
-        a.position = np.add(np2);
-        
-        a.angle -= a.rot1;
-        if(a.angle<0)a.angle+=2*Math.PI;
-        a.angle += a.rot2;
-        if(a.angle>2*Math.PI)a.angle-=2*Math.PI;
+        // var v = a.position.clone();
+        var v = a._view.getWorldDirection();
+        v.normalize();
+        v.multiplyScalar(a.speed);
+        a.position.add(v);
+        a.rotation.x += a.rot1;
+        a.rotation.y += a.rot2;
         
         // agent is trying to move from p to op. Check walls
         var res = this.stuff_collide_(a.frontEye, true, false);

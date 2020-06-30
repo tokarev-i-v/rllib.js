@@ -1,7 +1,7 @@
-import * as THREE from '../src/jsm/three.module';
-import {ColladaLoader} from '../src/jsm/ColladaLoader';
-import {FlyControls} from '../src/jsm/FlyControls';
-import Stats from '../src/jsm/stats.module';
+import * as THREE from '../../src/jsm/three.module';
+import {ColladaLoader} from '../../src/jsm/ColladaLoader';
+import {FlyControls} from '../../src/jsm/FlyControls';
+import Stats from '../../src/jsm/stats.module';
 var canvas, ctx;
 
 function getRandomArbitrary(min, max) {
@@ -75,42 +75,26 @@ class Agent{
     );
     
     this.actions = [];
-    this.actions.push([0, 0, 0]);
-    //rotate on X
-    this.actions.push([0.2, 0, 0]);
-    this.actions.push([-0.2, 0, 0]);
-    //rotate on Y
-    this.actions.push([0, 0.2, 0]);
-    this.actions.push([0, -0.2, 0]);
-    //rotate on Z
-    this.actions.push([0, 0, 0.2]);
-    this.actions.push([0, 0, -0.2]);
-
-    this.eyes_count = opt.eyes_count_hor + opt.eyes_count_ver;
-    this.eyes_count_hor = opt.eyes_count_hor;
-    this.eyes_count_ver = opt.eyes_count_ver;
+    this.actions.push([1,1]);
+    this.actions.push([0.8,1]);
+    this.actions.push([1,0.8]);
+    this.actions.push([0.5,0]);
+    this.actions.push([0,0.5]);
+    this.eyes_count = opt.eyes_count;
 
     // properties
     this.eyes = [];
     /**star */
     let r = 20;
-    let omega = -30;
-    let phi = -30;
+    let alpha = -30;
     /**Now we create agent's eyes*/
-    for (let i = 0; i < this.eyes_count_hor; i++){
-        let eye = new Eye(this, omega, phi, r);
+    for (let i = 0; i < this.eyes_count; i++){
+        let eye = new Eye(this, alpha, r);
         let mesh = eye.view;
         this.view.add(mesh);
         this.eyes.push(eye);
-        omega += 20;
+        alpha += 20;
     }
-    for (let i = 0; i < this.eyes_count_ver; i++){
-      let eye = new Eye(this, omega, phi, r);
-      let mesh = eye.view;
-      this.view.add(mesh);
-      this.eyes.push(eye);
-      phi += 20;
-  }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
       this._frontEye = this.eyes[Math.round(this.eyes.length/2)];
@@ -128,8 +112,7 @@ class Agent{
     // outputs on world
     this.rot1 = 0.0; // rotation speed of 1st wheel
     this.rot2 = 0.0; // rotation speed of 2nd wheel
-    this.rot3 = 0.0; // rotation speed of 3nd wheel
-
+    
     this.prevactionix = -1;
 
   }
@@ -158,14 +141,14 @@ class Agent{
     this.actionix = actionix; //back this up
     
     // demultiplex into behavior variables
-    this.rot1 = action[0];
-    this.rot2 = action[1];
-    this.rot3 = action[2];
+    this.rot1 = action[0]*1;
+    this.rot2 = action[1]*1;
+    
     //this.rot1 = 0;
     //this.rot2 = 0;
   }
 
-  backward() {
+  async backward() {
     // in backward pass agent learns.
     // compute reward 
     var proximity_reward = 0.0;
@@ -175,7 +158,7 @@ class Agent{
       // agents dont like to see walls, especially up close
       // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
       proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
-      proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
+      // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
     }
     // console.log("num_eyes: %s ", num_eyes);    
     proximity_reward = proximity_reward/num_eyes;
@@ -202,11 +185,11 @@ class Agent{
   set position(vec){
     this._view.position.copy(vec);
   }
-  get rotation(){
-    return this._view.rotation;
+  get angle(){
+    return this._view.rotation.z;
   }
-  set rotation(vec){
-    this._view.rotation.copy(vec);
+  set angle(val){
+    this._view.rotation.z = val;
   }
   get frontEye(){
     return this._frontEye;
@@ -224,15 +207,15 @@ class Eye{
    * @param {Number} alpha angle 
    * @param {Number} r radius
    */
-  constructor(a, phi, omega, r){
+  constructor(a, alpha, r){
     this._view = new THREE.Mesh(
-      new THREE.BoxBufferGeometry(1,1,1),
+      new THREE.BoxBufferGeometry(1,1,10),
       new THREE.MeshBasicMaterial({color: 0x111111})
     );
     /**setting Eye position and rotation */
-    this._view.position.x = Math.cos(Math.PI*phi/180)*Math.sin(Math.PI*omega/180)*r;
-    this._view.position.y = Math.sin(Math.PI*phi/180)*Math.sin(Math.PI*omega/180)*r;
-    this._view.rotation.z = Math.cos(Math.PI*omega/180)*r;
+    this._view.position.x = Math.sin(Math.PI*alpha/180)*r;
+    this._view.position.y = Math.cos(Math.PI*alpha/180)*r;
+    this._view.rotation.z = Math.PI*(180-alpha)/180;
     this._view.geometry.computeBoundingBox();
     this.raycaster = new THREE.Raycaster();
     this.max_range = 20;
@@ -285,27 +268,36 @@ class Eye{
    * @class
    * World Contains all features.
    */
-export default class World3DEat {
+export default class FlatAreaEatWorld {
     constructor(opt){
+
+
       this.init();
       this.agents = [];
+      // this.W = canvas.width;
+      // this.H = canvas.height;
 
-      this.W = 60;
-      this.H = 60;
-      this.D = 60;
+      this.W = 200;
+      this.H = 200;
 
       this.clock = 0;
       
       // set up walls in the world
       this.walls = []; 
       var pad = 10;
+      // util_add_box(this.walls, pad, pad, this.W-pad*2, this.H-pad*2);
+      // util_add_box(this.walls, 100, 100, 200, 300); // inner walls
+      // this.walls.pop();
+      // util_add_box(this.walls, 400, 100, 200, 300);
+      // this.walls.pop();
+      
 
       // set up food and poison
       this.items = []
       for(var k=0;k<4000;k++) {
         this.generateItem();
       }
-      let agent = new Agent({eyes_count_ver: 10, eyes_count_hor: 10, algo: opt.agent});
+      let agent = new Agent({eyes_count: 10, algo: opt.agent});
       this.Scene.add(agent.view);
       this.agents.push(agent);
     }   
@@ -313,14 +305,12 @@ export default class World3DEat {
     generateItem(){
       var x = getRandomArbitrary(-this.W, this.W);
       var y = getRandomArbitrary(-this.H, this.H);
-      var z = getRandomArbitrary(-this.D, this.D);
-
       var t = getRandomInt(1, 3); // food or poison (1 and 2)
       if (t == 1){
-        var it = new Food(new THREE.Vector3(x, y, z));
+        var it = new Food(new THREE.Vector3(x, y, 0));
       }
       else{
-        var it = new Poison(new THREE.Vector3(x, y, z));
+        var it = new Poison(new THREE.Vector3(x, y, 0));
       }
       this.items.push(it);
       this.Scene.add(it.view);
@@ -368,15 +358,15 @@ export default class World3DEat {
       
       this.Clock = new THREE.Clock();
 
-      // let TextureLoader = new THREE.TextureLoader();
-      // TextureLoader.load("forest/grass.png", function (tex) {
-      //     tex.wrapS = THREE.RepeatWrapping;
-      //     tex.wrapT = THREE.RepeatWrapping;
-      //     tex.repeat.set(100, 100);
-      //     let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
-      //     //ground.rotation.x -= Math.PI/2;
-      //     this.Scene.add(ground);
-      // }.bind(this));
+      let TextureLoader = new THREE.TextureLoader();
+      TextureLoader.load("grass.png", function (tex) {
+          tex.wrapS = THREE.RepeatWrapping;
+          tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(100, 100);
+          let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
+          //ground.rotation.x -= Math.PI/2;
+          this.Scene.add(ground);
+      }.bind(this));
     }
 
     render () {
@@ -395,7 +385,6 @@ export default class World3DEat {
       //         this.Mixer.update(delta);
       //     }
       
-      //this.agents[0].brain.visSelf(document.getElementById('brain_info_div'));
       this.Controls.update(delta);
   }
 
@@ -424,13 +413,14 @@ export default class World3DEat {
       this.items.splice(this.items.indexOf(it), 1);
     }
 
-    step() {
-      this.tick();
-      if(!this.skipdraw || this.clock % 50 === 0) {
-        this.render();
-        //draw_stats();
-        //draw_net();
-      }
+    async step() {
+      this.tick().then(()=>{
+        if(!this.skipdraw || this.clock % 50 === 0) {
+          this.render();
+          //draw_stats();
+          //draw_net();
+        }  
+      })
     }
 
     start() {
@@ -438,7 +428,7 @@ export default class World3DEat {
       this.step();
     }
 
-    tick() {
+    async tick() {
       // tick the environment
       this.clock++;
       
@@ -470,13 +460,31 @@ export default class World3DEat {
       // apply outputs of agents on evironment
       for(var i=0,n=this.agents.length;i<n;i++) {
         var a = this.agents[i];
-        // var v = a.position.clone();
-        var v = a._view.getWorldDirection();
-        v.normalize();
-        a.position.add(v);
-        a.rotation.x += a.rot1;
-        a.rotation.y += a.rot2;
-        a.rotation.z += a.rot3;
+        a.op = a.position.clone(); // back up old position
+        a.oangle = a.angle; // and angle
+        // steer the agent according to outputs of wheel velocities
+        var v = new THREE.Vector3(0, a.rad / 2.0);
+        var rotat = new THREE.Matrix4().makeRotationZ(a.angle + Math.PI/2);
+        v = v.applyMatrix4(rotat);
+        var w1p = a.position.clone().add(v); // positions of wheel 1 and 2
+        var w2p =a.position.clone().sub(v);
+        var vv = a.position.clone().sub(w2p);
+        rotat = new THREE.Matrix4().makeRotationZ(-a.rot1);
+        vv = vv.applyMatrix4(rotat);
+        var vv2 = a.position.clone().sub(w1p);
+        rotat = new THREE.Matrix4().makeRotationZ(a.rot2);
+        vv2 = vv2.clone().applyMatrix4(rotat);
+        var np = w2p.clone().add(vv);
+        np.multiplyScalar(0.5);
+        var np2 = w1p.clone().add(vv2);
+        np2.multiplyScalar(0.5);
+        a.position = np.add(np2);
+        
+        a.angle -= a.rot1;
+        if(a.angle<0)a.angle+=2*Math.PI;
+        a.angle += a.rot2;
+        if(a.angle>2*Math.PI)a.angle-=2*Math.PI;
+        
         // agent is trying to move from p to op. Check walls
         var res = this.stuff_collide_(a.frontEye, true, false);
         if(res) {
@@ -487,12 +495,8 @@ export default class World3DEat {
         // handle boundary conditions
         if(a.position.x<0)a.position.x=0;
         if(a.position.x>this.W)a.position.x=this.W;
-
         if(a.position.y<0)a.position.y=0;
         if(a.position.y>this.H)a.position.y=this.H;
-
-        if(a.position.z<0)a.position.z=0;
-        if(a.position.z>this.D)a.position.z=this.D;
       }
       
       // tick all items
