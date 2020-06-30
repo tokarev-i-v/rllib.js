@@ -1,6 +1,15 @@
 import * as tf from '@tensorflow/tfjs-node';
 // tf.enableDebugMode ()
-import {clipped_surrogate_obj, discounted_rewards, GAE, Buffer} from "./PPO";
+import {
+    act_smp_cont,
+    get_p_noisy,
+    get_p_log_cont,
+    gaussian_log_likelihood,
+
+    clipped_surrogate_obj, 
+    discounted_rewards, 
+    GAE, 
+    Buffer} from "./PPO";
 
 describe("PPO Buffer testing", function(){
     let b = new Buffer();
@@ -33,10 +42,10 @@ describe("PPO Buffer testing", function(){
     b.rtg.print()
 
     let [btchob, ac, adv, rtg] = b.get_batch();
-    // btchob.print();
-    // ac.print();
-    // adv.print();
-    // rtg.print();
+    btchob.print();
+    ac.print();
+    adv.print();
+    rtg.print();
 
     });
 
@@ -90,3 +99,46 @@ describe("PPO Buffer testing", function(){
     //     //     expect(dr.dataSync()).toEqual(expected_result.dataSync());
     //     // });
     // })
+
+    describe("act_smp_cont function testing", function(){
+        let p_noisy = tf.tensor([[[0.40635910630226135, 0.38385558128356934, -0.20591092109680176, -0.007639676332473755, 0.4495809078216553, -0.4446980357170105]]]);
+        let low_action_space =  -1;
+        let high_action_space = 1;
+        let ret =  act_smp_cont(p_noisy, low_action_space, high_action_space);
+        let expected_return = tf.tensor([[[0.40635910630226135, 0.38385558128356934, -0.20591092109680176, -0.007639676332473755, 0.4495809078216553, -0.4446980357170105]]]);
+        console.log("act_smp_cont OUTPUT:")
+        console.log(ret.dataSync())
+        console.log("act_smp_cont EXPECTED:")
+        console.log(expected_return.dataSync())
+    });
+
+    describe("get_p_noisy function testing", function(){
+        let p_logits = tf.tensor([[[0.44464942812919617, -0.06234215945005417, -0.43782833218574524, -0.27388322353363037, -0.08279531449079514, -0.004872760269790888]]]);
+        let log_std = tf.tensor([-0.5, -0.5, -0.5, -0.5, -0.5, -0.5]);
+        let ret =  get_p_noisy(p_logits, log_std);
+        let expected_return = tf.tensor([[[0.40635910630226135, 0.38385558128356934, -0.20591092109680176, -0.007639676332473755, 0.4495809078216553, -0.4446980357170105]]]);
+        
+        it("returning testing", function() {
+            expect(ret).toBeInstanceOf(tf.Tensor);
+        });
+    });
+
+    describe("get_p_log_cont function testing", function(){
+        let x = tf.tensor([[0.44671717286109924, -0.07409191131591797, 0.5582783222198486, -0.653685986995697, -0.08229169249534607, -0.2537800669670105]]);
+        let mean = tf.tensor([[0.44671717286109924, -0.07409191131591797, 0.5582783222198486, -0.653685986995697, -0.08229169249534607, -0.2537800669670105]]);
+        let log_std = tf.tensor([-0.5, -0.5, -0.5, -0.5, -0.5, -0.5]);
+        let ret =  get_p_log_cont(x, mean, log_std);
+        let expected_return = tf.tensor([-2.5136311054229736]);
+        console.log("get_p_log_cont OUTPUT:")
+        ret.print();
+        console.log("get_p_log_cont EXPECTED:")
+        expected_return.print();
+    });
+
+    // describe("gaussian_log_likelihood function testing", function(){
+
+    //     let ret =  gaussian_log_likelihood(x, mean, log_std);
+        
+    // });
+
+    

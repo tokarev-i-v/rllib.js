@@ -5,7 +5,7 @@ const softmax_entropy = (logits) => tf.tidy(()=>{
 });
 
 /**
- * 
+ * PASSED
  * @param {tf.Tensor} new_p 
  * @param {tf.Tensor} old_p 
  * @param {tf.Tensor} adv 
@@ -30,7 +30,7 @@ export const clipped_surrogate_obj = (new_p, old_p, adv, eps) => tf.tidy(()=>{
 });
 
 /**
- * 
+ * PASSED
  * @param {tf.Tensor} rews 
  * @param {number} last_sv 
  * @param {number} gamma 
@@ -49,7 +49,7 @@ export const discounted_rewards = (rews, last_sv, gamma) => tf.tidy(()=>{
     return ret_value;
 });
 /**
- * 
+ * PASSED
  * @param {tf.Tensor} rews 
  * @param {tf.Tensor} v 
  * @param {Number} v_last 
@@ -66,6 +66,11 @@ export const GAE = (rews, v, v_last, gamma=0.99, lam=0.95) => tf.tidy(()=>{
 
     return gae_advantage;
 });
+
+/**
+ * PASSED
+ * Contains replaybuffer for PPO.
+ */
 export class Buffer{
 
     constructor(gamma=0.99, lam=0.95){
@@ -97,5 +102,96 @@ export class Buffer{
     len(){
         return this.ob.shape[0];
     }
+}
+
+/**
+ * 
+ * @param {tf.Tensor} p_logits 
+ */
+export function act_smp_discrete(p_logits){
+    return tf.tidy(()=>{tf.squeeze(tf.multinomial(p_logits, 1))});
+}
+
+/**
+ * PASSED!
+ * @param {tf.Tensor} p_noisy 
+ * @param {Number} low_action_space 
+ * @param {Number} high_action_space 
+ */
+export function act_smp_cont(p_noisy, low_action_space, high_action_space){
+    return tf.tidy(()=>{
+        return tf.keep(tf.clipByValue(p_noisy, low_action_space, high_action_space));
+    });
+}
+/**
+ * PASSED!
+ * @param {tf.Tensor} p_logits 
+ * @param {tf.Tensor} log_std 
+ */
+export function get_p_noisy(p_logits, log_std){
+    return tf.tidy(()=>{
+        return tf.keep(p_logits.add(tf.randomNormal(p_logits.shape, 0, 1).mul( tf.exp(log_std))));
+    });
+}
+
+/**
+ * 
+ * @param {tf.Tensor} p_logits 
+ * @param {tf.Tensor} act_ph 
+ * @param {Number} act_dim 
+ * @param {tf.Tensor} log_std 
+ */
+export function get_p_log_discrete(p_logits, act_ph, act_dim, log_std){
+    return tf.tidy(()=>{
+        let act_onehot = tf.oneHot(act_ph, depth=act_dim);
+        return tf.sum(act_onehot.mul(tf.logSoftmax(p_logits), axis=-1));    
+    
+    })
+}
+
+/**
+ * PASSED!
+ * @param {tf.Tensor} x 
+ * @param {tf.Tensor} mean 
+ * @param {tf.Tensor} log_std 
+ */
+export function get_p_log_cont(x, mean, log_std){
+    return gaussian_log_likelihood(x, mean, log_std)
+}
+
+/**
+ * PASSED!
+ * @param {tf.Tensor} x 
+ * @param {tf.Tensor} mean 
+ * @param {tf.Tensor} log_std 
+ */
+export function gaussian_log_likelihood(x, mean, log_std){
+    return tf.tidy(()=>{
+        let log_p = x.sub(mean).square().div(log_std.exp().square().add(tf.scalar(1e-9))).add(log_std.mul(tf.scalar(2))).add(tf.scalar(2*Math.PI).log()).mul(tf.scalar(-0.5))
+        //log_p = -0.5 *((x-mean)**2 / (tf.exp(log_std)**2+1e-9) + 2*log_std + np.log(2*np.pi));
+        return tf.keep(tf.sum(log_p, -1));    
+    });
+}
+
+export function PPO(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
+    actor_iter=5, critic_iter=10, steps_per_env=100, action_type='Discrete'){
+    if (action_type === "Discrete"){
+        PPODiscrete(env_name, hidden_sizes, cr_lr, ac_lr, num_epochs, minibatch_size, gamma, lam,number_envs, eps, actor_iter, critic_iter, steps_per_env);
+    } else {
+        PPOContinuous(env_name, hidden_sizes, cr_lr, ac_lr, num_epochs, minibatch_size, gamma, lam,number_envs, eps, actor_iter, critic_iter, steps_per_env);
+    }
+}
+
+function PPODiscrete(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
+    actor_iter=5, critic_iter=10, steps_per_env=100){
+    
+    return;
+}
+
+function PPOContinuous(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
+    actor_iter=5, critic_iter=10, steps_per_env=100){
+        
+        return;
+
 }
 
