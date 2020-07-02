@@ -1,4 +1,4 @@
-import * as tf from '@tensorflow/tfjs-node-gpu';
+import * as tf from '@tensorflow/tfjs-node';
 
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
@@ -173,24 +173,100 @@ export function gaussian_log_likelihood(x, mean, log_std){
     });
 }
 
-export function PPO(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
+export function PPO(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
     actor_iter=5, critic_iter=10, steps_per_env=100, action_type='Discrete'){
     if (action_type === "Discrete"){
-        PPODiscrete(env_name, hidden_sizes, cr_lr, ac_lr, num_epochs, minibatch_size, gamma, lam,number_envs, eps, actor_iter, critic_iter, steps_per_env);
+        PPODiscrete(env, hidden_sizes, cr_lr, ac_lr, num_epochs, minibatch_size, gamma, lam,number_envs, eps, actor_iter, critic_iter, steps_per_env);
     } else {
-        PPOContinuous(env_name, hidden_sizes, cr_lr, ac_lr, num_epochs, minibatch_size, gamma, lam,number_envs, eps, actor_iter, critic_iter, steps_per_env);
+        PPOContinuous(env, hidden_sizes, cr_lr, ac_lr, num_epochs, minibatch_size, gamma, lam,number_envs, eps, actor_iter, critic_iter, steps_per_env);
     }
 }
 
-function PPODiscrete(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
+function PPODiscrete(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
     actor_iter=5, critic_iter=10, steps_per_env=100){
     
     return;
 }
 
-function PPOContinuous(env_name, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, actor_iter=5, critic_iter=10, steps_per_env=100){
+export function PPOContinuous(opt){
+
+    let env = opt.env;
+    let agent = opt.agent;
+    let hidden_sizes=opt.hidden_size; 
+    let cr_lr=opt.cr_lr; 
+    let ac_lr=opt.ac_lr;
+    let num_epochs=opt.number_epochs;
+    let minibatch_size=opt.minibatch_size; 
+    let gamma=opt.gamma;
+    let lam=opt.lam;
+    let number_envs=opt.number_envs; 
+    let eps=opt.eps;
+    let actor_iter=opt.actor_iter;
+    let critic_iter=opt.critic_iter;
+    let steps_per_env=opt.steps_per_env;
+
+
+
+    let envs = [];
+    envs.push(env);
+    let agents = [];
+    agents.push(agent);
+    let obs_dim = agents[0].observation_space.shape;
+
+    let low_action_space = agents[0].action_space.low
+    let high_action_space = agents[0].action_space.high
+    let act_dim = agents[0].action_space.shape[0]
+
+    let p_logits = mlp(obs_dim, hidden_sizes, act_dim, 'tanh', last_activation='tanh')
+    let log_std = tf.variable( name='log_std')
     
-        
+    let p_noisy = get_p_noisy;
+    let act_smp = act_smp_cont;
+    let p_log = get_p_log_cont;
+
+    let s_values = mlp(obs_dim, hidden_sizes, 1, 'tanh', last_activation=null);
+    
+    let p_opt = tf.train.adam(ac_lr);
+    let v_opt = tf.train.adam(cr_lr);
+    
+    let step_count = 0;
+    
+    for(let ep=0; ep<num_epochs;ep++){
+        let buffer = Buffer(gamma, lam);
+        let batch_rew = [];
+        let batch_len = [];        
+
+        for(let env in envs){
+
+            let temp_buf = [];
+
+            for(let i=0; i < steps_per_env; i++){
+                let nobs = tf.variable([env.n_obs]);
+                nobs = tf.expand_dims(nobs, 0);
+                let p_logits_val = p_logits(nobs);
+                let p_noisy_val = p_noisy(p_logits_val, log_std);
+                let act = act_smp(p_noisy_val, low_action_space, high_action_space);
+                let val = s_values(nobs);
+                act = np.squeeze(act);
+                let [obs2, rew, done, _] = env.step(act)
+
+                temp_buf.append([env.n_obs.copy(), rew, act, np.squeeze(val)])
+                env.n_obs = obs2.copy()
+                step_count += 1
+                if (done){
+                    buffer.store(np.array(temp_buf), 0)
+
+                    temp_buf = []
+                    
+                    batch_rew.append(env.get_episode_reward())
+                    batch_len.append(env.get_episode_length())
+                    
+                    env.reset()           
+                }
+            }
+        }
+
+    }
     
     
     return;

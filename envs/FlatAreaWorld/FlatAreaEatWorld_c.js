@@ -21,15 +21,15 @@ function getRandomInt(min, max) {
  * Class describe continuous R^n space.
  */
 class BoxSpace {
-  constructor(min=-1, max=1, shape=3){
-    this.min = min;
-    this.max = max;
+  constructor(low=-1, high=1, shape=3){
+    this.low = low;
+    this.high = high;
     this.shape = shape;
     this.value = tf.tensor(Array(shape).fill(0));
   }
   control(){
     return tf.tidy(()=>{
-      return tf.keep(tf.clipByValue(rt, this.min, this.max));
+      return tf.keep(tf.clipByValue(rt, this.low, this.high));
     });
   }
   sample(){
@@ -112,6 +112,7 @@ export class Agent{
 
     this.action_space = new BoxSpace(this.min_action,this.max_action,3 );
     this.eyes_count = opt.eyes_count;
+    this.observation_space = new BoxSpace(-10000000, 100000000, this.eyes_count * 3)
 
     this.eyes = [];
     let r = 20;
@@ -162,18 +163,11 @@ export class Agent{
         input_array[i*3 + e.sensed_type] = e.sensed_proximity/e.max_range; // normalize to [0,1]
       }
     }
+    return input_array;
     
-    // get action from brain
-    var action = this.brain.forward(input_array).dataSync();
-    
-    // demultiplex into behavior variables
-    
-    this.rot1 = action[0];
-    this.rot2 = action[1];
-    this.speed = action[2];
   }
 
-  async backward() {
+  backward() {
     // in backward pass agent learns.
     // compute reward 
     var proximity_reward = 0.0;
@@ -198,7 +192,9 @@ export class Agent{
     var reward = proximity_reward + forward_reward + digestion_reward; 
     // console.log("dig: %s proximity_reward %s forward_reward %s reward: %s", digestion_reward, proximity_reward, forward_reward, reward);     
     // pass to brain for learning
-    this.brain.backward(reward);
+    //this.brain.backward(reward);
+    console.log("REWARDSF ", reward);
+    return reward;
   }
 
   get view(){
@@ -210,6 +206,14 @@ export class Agent{
   set position(vec){
     this._view.position.copy(vec);
   }
+
+  get rotation(){
+    return this._view.rotation;
+  }
+  set rotation(vec){
+    this._view.rotation.copy(vec);
+  }
+  
   get angle(){
     return this._view.rotation.z;
   }
@@ -293,7 +297,7 @@ export class Eye{
    * @class
    * World Contains all features.
    */
-export class FlatAreaEatWorld {
+export class FlatAreaEatWorld_c {
     constructor(opt){
 
 
@@ -314,10 +318,20 @@ export class FlatAreaEatWorld {
       for(var k=0;k<4000;k++) {
         this.generateItem();
       }
-      let agent = new Agent({eyes_count: 10, algo: opt.agent});
+      if(opt){
+        if(opt.algo){
+          let agent = new Agent({eyes_count: 10, algo: opt.agent});
+          this.Scene.add(agent.view);
+          this.agents.push(agent);  
+        }
+  
+      }
+    }   
+
+    addAgent(agent){
       this.Scene.add(agent.view);
       this.agents.push(agent);
-    }   
+    }
 
     generateItem(){
       var x = getRandomArbitrary(-this.W, this.W);
@@ -334,20 +348,33 @@ export class FlatAreaEatWorld {
     }
 
     init(json_params){
-      this.Container = document.createElement("div");
-      this.Container.id = "MainContainer";
-      this.Container.classList.add("Container");
-      
-      this.Renderer = new THREE.WebGLRenderer();
-      this.Renderer.setSize(window.innerWidth, window.innerHeight);
-      this.Container.appendChild(this.Renderer.domElement);
+      if(typeof(document) !== typeof(undefined)){
+        this.Container = document.createElement("div");
+        this.Container.id = "MainContainer";
+        this.Container.classList.add("Container");
+        
+        this.Renderer = new THREE.WebGLRenderer();
+        this.Renderer.setSize(window.innerWidth, window.innerHeight);
+        this.Container.appendChild(this.Renderer.domElement);
+  
+        document.body.insertBefore( this.Container, document.body.firstChild);
+  
+        this.stats = new Stats();
+        document.body.appendChild(this.stats.dom);
 
-      document.body.insertBefore( this.Container, document.body.firstChild);
+        this.Camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
 
-      this.stats = new Stats();
-      document.body.appendChild(this.stats.dom);
+        this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
+        this.Controls.movementSpeed = 13;
+        this.Controls.rollSpeed = Math.PI / 8;
+        this.Controls.autoForward = false;
+        this.Controls.dragToLook = false;
+  
+      } else {
+        this.Camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
+      }
 
-      this.Camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
+
       this.Camera.position.set(0,0, 10);
       this.Scene = new THREE.Scene();
       this.Scene.background = new THREE.Color( 0xaaccff );
@@ -358,23 +385,21 @@ export class FlatAreaEatWorld {
       this.AmbientLight = new THREE.AmbientLight(0xFFFFFF, 0.9);
       this.Scene.add(this.AmbientLight);
 
-      this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
-      this.Controls.movementSpeed = 13;
-      this.Controls.rollSpeed = Math.PI / 8;
-      this.Controls.autoForward = false;
-      this.Controls.dragToLook = false;
       
       this.Clock = new THREE.Clock();
 
-      let TextureLoader = new THREE.TextureLoader();
-      TextureLoader.load("grass.png", function (tex) {
-          tex.wrapS = THREE.RepeatWrapping;
-          tex.wrapT = THREE.RepeatWrapping;
-          tex.repeat.set(100, 100);
-          let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
-          //ground.rotation.x -= Math.PI/2;
-          this.Scene.add(ground);
-      }.bind(this));
+      if(typeof(document) !== typeof(undefined)){
+        let TextureLoader = new THREE.TextureLoader();
+        TextureLoader.load("grass.png", function (tex) {
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(100, 100);
+            let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
+            //ground.rotation.x -= Math.PI/2;
+            this.Scene.add(ground);
+        }.bind(this));
+  
+      }
     }
 
     render () {
@@ -411,12 +436,16 @@ export class FlatAreaEatWorld {
       this.items.splice(this.items.indexOf(it), 1);
     }
 
-    async step() {
-      this.tick().then(()=>{
-        if(!this.skipdraw || this.clock % 50 === 0) {
-          this.render();
-        }  
-      })
+    step(action) {
+      if(typeof(document) !== typeof(undefined) && (!this.skipdraw || this.clock % 50 === 0)) {
+
+        this.render();
+      }  
+      this.rot1 = action[0];
+      this.rot2 = action[1];
+      this.speed = action[2];  
+      let ret = this.tick(action);
+      return ret;
     }
 
     start() {
@@ -424,7 +453,10 @@ export class FlatAreaEatWorld {
       this.step();
     }
 
-    async tick() {
+    tick() {
+
+      let state, done, reward;
+
       // tick the environment
       this.clock++;
       
@@ -447,10 +479,10 @@ export class FlatAreaEatWorld {
           }
         }
       }
-      
+      let states = [];
       // let the agents behave in the world based on their input
       for(var i=0,n=this.agents.length;i<n;i++) {
-        this.agents[i].forward();
+        states.push(this.agents[i].forward());
       }
       
       // apply outputs of agents on evironment
@@ -513,11 +545,18 @@ export class FlatAreaEatWorld {
       if(this.items.length < 5000) {
         this.generateItem();
       }
-      
+      let rewards = [];
       // agents are given the opportunity to learn based on feedback of their action on environment
       for(var i=0,n=this.agents.length;i<n;i++) {
-        this.agents[i].backward();
+        rewards.push(this.agents[i].backward());
       }
+      done = 0;
+      if(this.clock > 500){
+        done = true;
+      }
+      state = states[0];
+      reward = rewards[0];
+      return [state, reward, done];
     }
   }
   
