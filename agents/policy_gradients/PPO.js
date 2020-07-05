@@ -1,3 +1,4 @@
+// import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs-node';
 
 const softmax_entropy = (logits) => tf.tidy(()=>{
@@ -25,8 +26,8 @@ export const clipped_surrogate_obj = (new_p, old_p, adv, eps) => tf.tidy(()=>{
     let rtmul = rt.mul(adv);
     let clipped = tf.clipByValue(rt, 1-eps, 1+eps).mul(adv);
     let minimum = tf.minimum(rtmul, clipped);
-    let meaned = minimum.mean();
-    return -meaned.dataSync();
+    let minus_meaned = minimum.mean().mul(-1);
+    return minus_meaned;
 });
 
 /**
@@ -81,15 +82,33 @@ export class Buffer{
         this.ac = tf.tensor([]);
         this.rtg = tf.tensor([]);
     }
-    store(temp_traj, last_sv){
-        if (temp_traj.length > 0){
+    store(temp_states, temp_rewards, temp_actions, temp_values, last_sv){
+        if (temp_states.length > 0){
             tf.tidy(()=>{
-                let tens = tf.tensor(temp_traj);
-                this.ob = tf.keep(this.ob.concat(tens.slice([0], [temp_traj.length,1]).flatten()));
-                let rtg = discounted_rewards(tens.slice([0,1], [temp_traj.length,1]).flatten(), last_sv, this.gamma);
-                this.adv = tf.keep(this.adv.concat(GAE(tens.slice([0,1], [temp_traj.length,1]).flatten(), tens.slice([0,3], [temp_traj.length,1]).flatten(), last_sv, this.gamma, this.lam)));
+                let t_s = tf.tensor(temp_states);
+                let t_r = tf.tensor(temp_rewards);
+                let t_a = tf.tensor(temp_actions);
+                let t_v = tf.tensor(temp_values);
+                // console.log("store 0", temp_traj[0]);
+                this.ob = tf.keep(this.ob.concat(t_s));
+                // this.ob = tf.keep(this.ob.concat(tens.slice([0], [temp_traj.length,1]).flatten()));
+                // console.log("store 1");
+                // this.ob.print();
+                let rtg = discounted_rewards(t_r.flatten(), last_sv, this.gamma);
+                // console.log("store 2");
+                this.adv = tf.keep(this.adv.concat(GAE(t_r.flatten(), t_v.flatten(), last_sv, this.gamma, this.lam)));
+                // console.log("store 3");
+                // this.adv.print();
+                // console.log(this.adv.shape);
                 this.rtg = tf.keep(this.rtg.concat(rtg));
-                this.ac = tf.keep(this.ac.concat(tens.slice([0,2], [temp_traj.length,1]).flatten()));    
+                // console.log("store 4");
+                // this.rtg.print();
+                this.ac = tf.keep(this.ac.concat(t_a));    
+                // console.log("store 5");
+                console.log(this.ob.shape);
+                console.log(this.adv.shape);
+                console.log(this.rtg.shape);
+                console.log(this.ac.shape);
             });
         }
     }
@@ -173,6 +192,18 @@ export function gaussian_log_likelihood(x, mean, log_std){
     });
 }
 
+function mlp(x, hidden_layers, output_size, activation='relu', last_activation='relu'){
+    return tf.tidy(()=>{
+        let inputt = tf.input({shape: [null, x[0]]});
+        x = inputt;
+        for(let l=0; l < hidden_layers; l++){
+            x = tf.layers.dense({units:l, activation:activation}).apply(x);
+        }
+        let output = tf.layers.dense({units: output_size[0], activation: last_activation}).apply(x);
+        return tf.keep(tf.model({inputs:inputt, outputs:output}));
+    });
+}
+
 export function PPO(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
     actor_iter=5, critic_iter=10, steps_per_env=100, action_type='Discrete'){
     if (action_type === "Discrete"){
@@ -189,87 +220,145 @@ function PPODiscrete(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_
 }
 
 export function PPOContinuous(opt){
-
-    let env = opt.env;
-    let agent = opt.agent;
-    let hidden_sizes=opt.hidden_size; 
-    let cr_lr=opt.cr_lr; 
-    let ac_lr=opt.ac_lr;
-    let num_epochs=opt.number_epochs;
-    let minibatch_size=opt.minibatch_size; 
-    let gamma=opt.gamma;
-    let lam=opt.lam;
-    let number_envs=opt.number_envs; 
-    let eps=opt.eps;
-    let actor_iter=opt.actor_iter;
-    let critic_iter=opt.critic_iter;
-    let steps_per_env=opt.steps_per_env;
-
-
-
-    let envs = [];
-    envs.push(env);
-    let agents = [];
-    agents.push(agent);
-    let obs_dim = agents[0].observation_space.shape;
-
-    let low_action_space = agents[0].action_space.low
-    let high_action_space = agents[0].action_space.high
-    let act_dim = agents[0].action_space.shape[0]
-
-    let p_logits = mlp(obs_dim, hidden_sizes, act_dim, 'tanh', last_activation='tanh')
-    let log_std = tf.variable( name='log_std')
+    tf.tidy(()=>{
+        let env = opt.env;
+        let agent = opt.agent;
+        let hidden_sizes=opt.hidden_size; 
+        let cr_lr=opt.cr_lr; 
+        let ac_lr=opt.ac_lr;
+        let num_epochs=opt.num_epochs;
+        let minibatch_size=opt.minibatch_size; 
+        let gamma=opt.gamma;
+        let lam=opt.lam;
+        let number_envs=opt.number_envs; 
+        let eps=opt.eps;
+        let actor_iter=opt.actor_iter;
+        let critic_iter=opt.critic_iter;
+        let steps_per_env=opt.steps_per_env;
     
-    let p_noisy = get_p_noisy;
-    let act_smp = act_smp_cont;
-    let p_log = get_p_log_cont;
-
-    let s_values = mlp(obs_dim, hidden_sizes, 1, 'tanh', last_activation=null);
     
-    let p_opt = tf.train.adam(ac_lr);
-    let v_opt = tf.train.adam(cr_lr);
     
-    let step_count = 0;
+        let envs = [];
+        envs.push(env);
+        let agents = [];
+        agents.push(agent);
+        let obs_dim = agents[0].observation_space.shape;
     
-    for(let ep=0; ep<num_epochs;ep++){
-        let buffer = Buffer(gamma, lam);
-        let batch_rew = [];
-        let batch_len = [];        
-
-        for(let env in envs){
-
-            let temp_buf = [];
-
-            for(let i=0; i < steps_per_env; i++){
-                let nobs = tf.variable([env.n_obs]);
-                nobs = tf.expand_dims(nobs, 0);
-                let p_logits_val = p_logits(nobs);
-                let p_noisy_val = p_noisy(p_logits_val, log_std);
-                let act = act_smp(p_noisy_val, low_action_space, high_action_space);
-                let val = s_values(nobs);
-                act = np.squeeze(act);
-                let [obs2, rew, done, _] = env.step(act)
-
-                temp_buf.append([env.n_obs.copy(), rew, act, np.squeeze(val)])
-                env.n_obs = obs2.copy()
-                step_count += 1
-                if (done){
-                    buffer.store(np.array(temp_buf), 0)
-
-                    temp_buf = []
-                    
-                    batch_rew.append(env.get_episode_reward())
-                    batch_len.append(env.get_episode_length())
-                    
-                    env.reset()           
+        let low_action_space = agents[0].action_space.low
+        let high_action_space = agents[0].action_space.high
+        let act_dim = agents[0].action_space.shape
+    
+        console.log(act_dim, obs_dim);
+        let p_logits = mlp(obs_dim, hidden_sizes, act_dim, 'tanh', 'tanh');
+        let log_std = tf.variable(tf.fill(act_dim, -0.5), false, 'log_std');
+        
+        let p_noisy = get_p_noisy;
+        let act_smp = act_smp_cont;
+        let p_log = get_p_log_cont;
+        let s_values = mlp(obs_dim, hidden_sizes, [1], 'tanh', null);
+        
+        let p_opt = tf.train.adam(ac_lr);
+        let v_opt = tf.train.adam(cr_lr);
+        
+        let step_count = 0;
+        console.log("Num epochs ", num_epochs);
+        for(let ep=0; ep<num_epochs;ep++){
+            let buffer = new Buffer(gamma, lam);
+            let batch_rew = [];
+            let batch_len = [];        
+            for(let env of envs){
+                let temp_states = [];
+                let temp_rewards = [];
+                let temp_actions = [];
+                let temp_values = [];
+                for(let i=0; i < steps_per_env; i++){
+                    console.log(i);
+                    let nobs = tf.tensor([env.n_obs]);
+                    nobs = tf.expandDims(nobs, 0);
+                    let p_logits_val = p_logits.apply(nobs);
+                    let p_noisy_val = p_noisy(p_logits_val, log_std);
+                    let act = act_smp(p_noisy_val, low_action_space, high_action_space);
+                    let val = s_values.apply(nobs);
+                    act = tf.squeeze(act);
+                    let [obs2, rew, done, _] = env.step(act);
+                    temp_states.push([env.n_obs.slice()])
+                    temp_rewards.push([rew]);
+                    temp_actions.push([act.dataSync()]);
+                    temp_values.push([tf.squeeze(val).dataSync()]);
+                    env.n_obs = obs2.slice()
+                    step_count += 1
+                    if (done){
+                        buffer.store(temp_states, temp_rewards, temp_actions, temp_values, 0);
+                        temp_states = [];
+                        temp_rewards = [];
+                        temp_actions = [];
+                        temp_values = [];
+                        batch_rew.push(env.get_episode_reward())
+                        batch_len.push(env.get_episode_length())
+                        
+                        env.reset()           
+                    }
                 }
+
+                let nobs = tf.tensor([env.n_obs]);
+                nobs = tf.expandDims(nobs, 0);
+                let last_v = s_values.apply(nobs);
+                buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v);
+
             }
+
+// CHECKING Stopped HERE!            
+
+        let [obs_batch, act_batch, adv_batch, rtg_batch] = buffer.get_batch();
+        let p_logits_value = p_logits.apply(obs_batch);
+        let old_p_log = p_log(act_batch, p_logits_value, log_std);
+        let old_p_batch = old_p_log;
+
+        let lb = buffer.len();
+        let shuffled_batch = tf.util.createShuffledIndices(lb); 
+        
+        for(let j=0; j < actor_iter; j++){
+            tf.util.shuffle(shuffled_batch);
+            for(let idx = 0; idx < lb; idx += minibatch_size){
+                let minib = shuffled_batch.slice(idx, Math.min(idx+minibatch_size,lb));
+                // let old_p_log_ph = old_p_batch[minib];
+                let gat_tensor = tf.tensor(new Int32Array(minib));
+                let p_loss = ()=> tf.tidy(()=>{
+                    let p_logits_value = p_logits.apply(obs_batch.gather(gat_tensor));
+                    let p_log_value = p_log( act_batch.gather(gat_tensor), p_logits_value, log_std)
+                    let p_loss_v = clipped_surrogate_obj(p_log_value, old_p_batch.gather(gat_tensor), adv_batch.gather(gat_tensor), eps)
+                    return p_loss_v;    
+                });
+                
+                let gradients = tf.variableGrads(p_loss, p_logits.getWeights());
+                p_opt.applyGradients(gradients.grads);
+                tf.dispose(gradients);
+            }
+
         }
 
-    }
+        for(let j=0; j < critic_iter; j++){
+            tf.util.shuffle(shuffled_batch);
+            for(let idx = 0; idx < lb; idx += minibatch_size){
+                let minib = shuffled_batch.slice(idx, Math.min(idx+minibatch_size,lb));
+                let gat_tensor = tf.tensor(new Int32Array(minib) );
+                let v_loss = ()=> tf.tidy(()=>{
+                    let s_v = tf.squeeze(s_values.apply(obs_batch.gather(gat_tensor)));
+                    let v_loss_v = tf.mean(rtg_batch.gather(gat_tensor).sub(s_v).square());
+                    return v_loss_v;
+                });
+
+                let  gradients = tf.variableGrads(v_loss, s_values.getWeights());
+                v_opt.applyGradients(gradients.grads);
+                tf.dispose(gradients);
+            }    
+            
+
+        }
+        
+        }
     
-    
-    return;
+    });
 
 }
 

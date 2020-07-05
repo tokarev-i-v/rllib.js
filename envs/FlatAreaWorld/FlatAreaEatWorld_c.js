@@ -1,9 +1,9 @@
-import * as tf from '@tensorflow/tfjs-node';
+// import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as THREE from '../../src/jsm/three.module';
 import {ColladaLoader} from '../../src/jsm/ColladaLoader';
 import {FlyControls} from '../../src/jsm/FlyControls';
 import Stats from '../../src/jsm/stats.module';
-import { op } from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs-node';
 var canvas, ctx;
 
 function getRandomArbitrary(min, max) {
@@ -25,7 +25,7 @@ class BoxSpace {
     this.low = low;
     this.high = high;
     this.shape = shape;
-    this.value = tf.tensor(Array(shape).fill(0));
+    this.value = tf.tensor(Array(shape[0]).fill(0));
   }
   control(){
     return tf.tidy(()=>{
@@ -34,7 +34,7 @@ class BoxSpace {
   }
   sample(){
     return tf.tidy(()=>{
-      return tf.keep(tf.randomUniform([this.shape]));
+      return tf.keep(tf.randomUniform(this.shape));
     });
   }
 }
@@ -110,10 +110,10 @@ export class Agent{
     this.min_action = -1.0;
     this.max_action = 1.0;
 
-    this.action_space = new BoxSpace(this.min_action,this.max_action,3 );
+    this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
-    this.observation_space = new BoxSpace(-10000000, 100000000, this.eyes_count * 3)
-
+    this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
+    console.log("Observation space shape: ", this.observation_space.shape);
     this.eyes = [];
     let r = 20;
     let alpha = -30;
@@ -311,7 +311,9 @@ export class FlatAreaEatWorld_c {
       
       this.walls = []; 
       var pad = 10;
-      
+
+      this.rew_episode = 0;
+      this.len_episode = 0;
 
       // set up food and poison
       this.items = []
@@ -324,13 +326,14 @@ export class FlatAreaEatWorld_c {
           this.Scene.add(agent.view);
           this.agents.push(agent);  
         }
-  
+      
       }
     }   
 
     addAgent(agent){
       this.Scene.add(agent.view);
       this.agents.push(agent);
+      this.n_obs = this.agents[0].forward();
     }
 
     generateItem(){
@@ -402,6 +405,23 @@ export class FlatAreaEatWorld_c {
       }
     }
 
+    reset(){
+        this.n_obs = this.agents[0].forward();
+        this.rew_episode = 0;
+        this.len_episode = 0;
+        this.clock = 0;
+        return this.n_obs.slice()
+    }
+
+    get_episode_reward(){
+      return this.rew_episode
+    }
+
+    get_episode_length(){
+      return this.len_episode
+    }
+
+
     render () {
       this.stats.update();
       
@@ -409,7 +429,7 @@ export class FlatAreaEatWorld_c {
       var delta = this.Clock.getDelta();
       
       this.Controls.update(delta);
-  }
+    }
 
     // helper function to get closest colliding walls/items
     stuff_collide_(eye, check_walls, check_items) {
@@ -445,8 +465,11 @@ export class FlatAreaEatWorld_c {
       this.rot2 = action[1];
       this.speed = action[2];  
       let ret = this.tick(action);
+      this.rew_episode += ret[1];
+      this.len_episode += 1;
       return ret;
     }
+
 
     start() {
       requestAnimationFrame(this.start.bind(this));
@@ -556,7 +579,8 @@ export class FlatAreaEatWorld_c {
       }
       state = states[0];
       reward = rewards[0];
-      return [state, reward, done];
+      let info = {};
+      return [state, reward, done, info];
     }
   }
   
