@@ -6,4 +6,3 @@ tf.disableDeprecationWarnings();
 tf.setBackend("cpu").then(()=>{
     world.start();
 });
-

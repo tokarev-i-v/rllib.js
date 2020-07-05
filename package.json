@@ -24,6 +24,7 @@
   },
   "scripts": {
     "watch": "cross-env NODE_ENV=development parcel index.html --no-hmr --target browser --global window",
+    "watch_ppo": "cross-env NODE_ENV=development parcel ppo_web_worker.html ./agents/policy_gradients/ppo_worker.js --no-hmr --target browser --global window",
     "build": "cross-env NODE_ENV=production parcel build index.html --target browser --out-dir build --public-url ./",
     "test": "babel-node --inspect tests.js",
     "lint": "eslint ."

@@ -1,5 +1,5 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
@@ -105,10 +105,10 @@ export class Buffer{
                 // this.rtg.print();
                 this.ac = tf.keep(this.ac.concat(t_a));    
                 // console.log("store 5");
-                console.log(this.ob.shape);
-                console.log(this.adv.shape);
-                console.log(this.rtg.shape);
-                console.log(this.ac.shape);
+                // console.log(this.ob.shape);
+                // console.log(this.adv.shape);
+                // console.log(this.rtg.shape);
+                // console.log(this.ac.shape);
             });
         }
     }
@@ -214,13 +214,13 @@ export function PPO(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_e
 }
 
 function PPODiscrete(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
-    actor_iter=5, critic_iter=10, steps_per_env=100){
+    actor_iter=5, critic_iter=10, steps_per_env=5){
     
     return;
 }
 
-export function PPOContinuous(opt){
-    tf.tidy(()=>{
+export async function PPOContinuous(opt){
+    // tf.tidy(()=>{
         let env = opt.env;
         let agent = opt.agent;
         let hidden_sizes=opt.hidden_size; 
@@ -236,8 +236,6 @@ export function PPOContinuous(opt){
         let critic_iter=opt.critic_iter;
         let steps_per_env=opt.steps_per_env;
     
-    
-    
         let envs = [];
         envs.push(env);
         let agents = [];
@@ -248,7 +246,7 @@ export function PPOContinuous(opt){
         let high_action_space = agents[0].action_space.high
         let act_dim = agents[0].action_space.shape
     
-        console.log(act_dim, obs_dim);
+        // console.log(act_dim, obs_dim);
         let p_logits = mlp(obs_dim, hidden_sizes, act_dim, 'tanh', 'tanh');
         let log_std = tf.variable(tf.fill(act_dim, -0.5), false, 'log_std');
         
@@ -261,7 +259,7 @@ export function PPOContinuous(opt){
         let v_opt = tf.train.adam(cr_lr);
         
         let step_count = 0;
-        console.log("Num epochs ", num_epochs);
+        // console.log("Num epochs ", num_epochs);
         for(let ep=0; ep<num_epochs;ep++){
             let buffer = new Buffer(gamma, lam);
             let batch_rew = [];
@@ -272,7 +270,7 @@ export function PPOContinuous(opt){
                 let temp_actions = [];
                 let temp_values = [];
                 for(let i=0; i < steps_per_env; i++){
-                    console.log(i);
+                    // console.log(i);
                     let nobs = tf.tensor([env.n_obs]);
                     nobs = tf.expandDims(nobs, 0);
                     let p_logits_val = p_logits.apply(nobs);
@@ -280,7 +278,7 @@ export function PPOContinuous(opt){
                     let act = act_smp(p_noisy_val, low_action_space, high_action_space);
                     let val = s_values.apply(nobs);
                     act = tf.squeeze(act);
-                    let [obs2, rew, done, _] = env.step(act);
+                    let [obs2, rew, done, _] = await env.step(act);
                     temp_states.push([env.n_obs.slice()])
                     temp_rewards.push([rew]);
                     temp_actions.push([act.dataSync()]);
@@ -358,7 +356,7 @@ export function PPOContinuous(opt){
         
         }
     
-    });
+    // });
 
 }
 

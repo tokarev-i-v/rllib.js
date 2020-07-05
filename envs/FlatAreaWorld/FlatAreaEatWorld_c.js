@@ -1,9 +1,9 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
+import * as tf from '@tensorflow/tfjs';
 import * as THREE from '../../src/jsm/three.module';
 import {ColladaLoader} from '../../src/jsm/ColladaLoader';
 import {FlyControls} from '../../src/jsm/FlyControls';
 import Stats from '../../src/jsm/stats.module';
-import * as tf from '@tensorflow/tfjs-node';
 var canvas, ctx;
 
 function getRandomArbitrary(min, max) {
@@ -193,7 +193,6 @@ export class Agent{
     // console.log("dig: %s proximity_reward %s forward_reward %s reward: %s", digestion_reward, proximity_reward, forward_reward, reward);     
     // pass to brain for learning
     //this.brain.backward(reward);
-    console.log("REWARDSF ", reward);
     return reward;
   }
 
@@ -328,6 +327,7 @@ export class FlatAreaEatWorld_c {
         }
       
       }
+      this.render();
     }   
 
     addAgent(agent){
@@ -351,7 +351,7 @@ export class FlatAreaEatWorld_c {
     }
 
     init(json_params){
-      if(typeof(document) !== typeof(undefined)){
+      // if(typeof(document) !== typeof(undefined)){
         this.Container = document.createElement("div");
         this.Container.id = "MainContainer";
         this.Container.classList.add("Container");
@@ -373,9 +373,9 @@ export class FlatAreaEatWorld_c {
         this.Controls.autoForward = false;
         this.Controls.dragToLook = false;
   
-      } else {
-        this.Camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-      }
+      // } else {
+      //   this.Camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
+      // }
 
 
       this.Camera.position.set(0,0, 10);
@@ -423,6 +423,7 @@ export class FlatAreaEatWorld_c {
 
 
     render () {
+      requestAnimationFrame(this.render.bind(this));
       this.stats.update();
       
       this.Renderer.render(this.Scene, this.Camera);
@@ -456,14 +457,13 @@ export class FlatAreaEatWorld_c {
       this.items.splice(this.items.indexOf(it), 1);
     }
 
-    step(action) {
-      if(typeof(document) !== typeof(undefined) && (!this.skipdraw || this.clock % 50 === 0)) {
-
-        this.render();
-      }  
-      this.rot1 = action[0];
-      this.rot2 = action[1];
-      this.speed = action[2];  
+    async step(action) {
+      // if(!this.skipdraw || this.clock % 50 === 0) {
+      //   this.render();
+      // }  
+      this.agents[0].rot1 = action[0];
+      this.agents[0].rot2 = action[1];
+      this.agents[0].speed = action[2];  
       let ret = this.tick(action);
       this.rew_episode += ret[1];
       this.len_episode += 1;
@@ -476,7 +476,7 @@ export class FlatAreaEatWorld_c {
       this.step();
     }
 
-    tick() {
+    tick(action) {
 
       let state, done, reward;
 
@@ -574,7 +574,7 @@ export class FlatAreaEatWorld_c {
         rewards.push(this.agents[i].backward());
       }
       done = 0;
-      if(this.clock > 500){
+      if(this.clock > 2){
         done = true;
       }
       state = states[0];
