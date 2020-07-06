@@ -105,10 +105,10 @@ export class Agent{
       new THREE.BoxBufferGeometry(this.rad,this.rad,this.rad),
       new THREE.MeshBasicMaterial({color: 0xFFAA11})
     );
-    
+    // this._view.rotation.x += Math.PI/2;
 
-    this.min_action = -1.0;
-    this.max_action = 1.0;
+    this.min_action = -10.0;
+    this.max_action = 10.0;
 
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
@@ -242,8 +242,8 @@ export class Eye{
     );
     /**setting Eye position and rotation */
     this._view.position.x = Math.sin(Math.PI*alpha/180)*r;
-    this._view.position.y = Math.cos(Math.PI*alpha/180)*r;
-    this._view.rotation.z = Math.PI*(180-alpha)/180;
+    this._view.position.z = Math.cos(Math.PI*alpha/180)*r;
+    this._view.rotation.x = Math.PI/2;
     this._view.geometry.computeBoundingBox();
     this.raycaster = new THREE.Raycaster();
     this.max_range = 20;
@@ -341,10 +341,10 @@ export class FlatAreaEatWorld_c {
       var y = getRandomArbitrary(-this.H, this.H);
       var t = getRandomInt(1, 3); // food or poison (1 and 2)
       if (t == 1){
-        var it = new Food(new THREE.Vector3(x, y, 0));
+        var it = new Food(new THREE.Vector3(x, 0, y));
       }
       else{
-        var it = new Poison(new THREE.Vector3(x, y, 0));
+        var it = new Poison(new THREE.Vector3(x, 0, y));
       }
       this.items.push(it);
       this.Scene.add(it.view);
@@ -398,7 +398,7 @@ export class FlatAreaEatWorld_c {
             tex.wrapT = THREE.RepeatWrapping;
             tex.repeat.set(100, 100);
             let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
-            //ground.rotation.x -= Math.PI/2;
+            ground.rotation.x -= Math.PI/2;
             this.Scene.add(ground);
         }.bind(this));
   
@@ -512,11 +512,12 @@ export class FlatAreaEatWorld_c {
       for(var i=0,n=this.agents.length;i<n;i++) {
         var a = this.agents[i];
         // var v = a.position.clone();
-        var v = a._view.getWorldDirection();
+        var v = new THREE.Vector3();
+        a._view.getWorldDirection(v);
         v.normalize();
         v.multiplyScalar(a.speed);
         a.position.add(v);
-        a.rotation.z += a.rot1;
+        a.rotation.y += a.rot1;
         // a.rotation.y += a.rot2;
         
         // agent is trying to move from p to op. Check walls
