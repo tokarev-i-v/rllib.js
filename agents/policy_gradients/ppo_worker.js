@@ -5,32 +5,60 @@ const rejects = {}
 let globalMsgId = 0;
 
 // import {PPOContinuous} from PPO;
-
-let agent = {
+var agent = {
     observation_space: [],
     action_space: []
 };
-let env = {
+var env = {
     step: makeStep,
-    n_obs: []
+    n_obs: [],
+    action: null,
+    e_r: 0,
+    e_l: 0,
+    reset: env_reset,
+    get_episode_reward: get_episode_reward,
+    get_episode_length: get_episode_length,
+    
 }
 
+function get_episode_reward(){
+    return env.e_r;
+}
+function get_episode_length(){
+    return env.e_l;
+}
+
+function env_reset(){
+    return 0;
+}
+
+
+self.env = env;
 function makeStep(){
+    console.log("start of makestep");
     return new Promise(function (resolve, reject) {
-        postMessage();
-        onmessage = function(e){
-            env.n_obs = e.data.n_obs;
-            resolve(e.data.step_data);   
+        console.log("On send action, ", self.env.action);
+        self.resolve = resolve;
+        self.onmessage = function(e){
+            console.log("ONMESSAGE");
+            self.env.n_obs = e.data.n_obs;
+            self.env.e_l = e.data.e_l;
+            self.env.e_r = e.data.e_r;
+            self.resolve(e.data.step_data);   
         }
+        self.postMessage({action: self.env.action});
     });
   }
 
+
 //at first we get "agent" and "env"
-onmessage = function(e){
+self.onmessage = function(e){
+    console.log("PPOworker first onmessage");
     agent.observation_space = e.data.observation_space;
     agent.action_space = e.data.action_space;
-    console.log(e.data.observation_space);
-    PPOContinuous({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:5e-4, ac_lr:2e-4, gamma:0.99, lam:0.95, steps_per_env:10, 
-        number_envs:10, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:50, minibatch_size:64});
+    env.n_obs = e.data.n_obs;
+    PPOContinuous({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:5e-4, ac_lr:2e-4, gamma:0.99, lam:0.95, steps_per_env:5000, 
+        number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:50, minibatch_size:64});
+
 }
 

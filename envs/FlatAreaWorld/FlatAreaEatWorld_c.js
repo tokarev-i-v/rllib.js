@@ -457,7 +457,7 @@ export class FlatAreaEatWorld_c {
       this.items.splice(this.items.indexOf(it), 1);
     }
 
-    async step(action) {
+    step(action) {
       // if(!this.skipdraw || this.clock % 50 === 0) {
       //   this.render();
       // }  
