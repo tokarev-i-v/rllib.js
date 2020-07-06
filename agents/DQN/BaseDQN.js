@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs'
-
+import * as tfvis from '@tensorflow/tfjs-vis'
 /**
  * Based on Andrej Karpathy's example of DQN learning.
  * https://cs.stanford.edu/people/karpathy/convnetjs/demo/rldemo.html
@@ -161,6 +161,9 @@ export default class DQN{
       this.average_reward_window = new Buffer(10, 1000);
       this.average_loss_window = new Buffer(10, 1000);
       this.learning = true;
+      
+      this.displayHistoryData = [];
+      this.surface = { name: 'Line chart', tab: 'Charts' };
     }
 
     getNetInput(xt) {
@@ -299,7 +302,13 @@ export default class DQN{
   
           // avcost = avcost/this.BATCH_SIZE;
           // this.average_loss_window.add(avcost);
-          console.log("avg: %s", this.average_reward_window.get_average())
+          // console.log("avg: %s", this.average_reward_window.get_average());
+          if (this.displayHistoryData.length > 1100){
+            this.displayHistoryData.splice(0,100);
+          }
+          this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
+          let data = {values: this.displayHistoryData};
+          tfvis.render.linechart(this.surface, data);
         }
       }
 }

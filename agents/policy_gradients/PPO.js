@@ -279,9 +279,9 @@ export async function PPOContinuous(opt){
                     let val = s_values.apply(nobs);
                     act = tf.squeeze(act);
                     env.action = act.dataSync();
-                    console.log(act.dataSync());
+                    // console.log(act.dataSync());
                     let [obs2, rew, done, _] = await env.step();
-                    console.log("after await");
+                    // console.log("after await");
                     temp_states.push([env.n_obs.slice()])
                     temp_rewards.push([rew]);
                     temp_actions.push([act.dataSync()]);
@@ -307,7 +307,7 @@ export async function PPOContinuous(opt){
                 buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v);
 
             }
-            console.log("on end");
+            // console.log("on end");
 // CHECKING Stopped HERE!            
 
         let [obs_batch, act_batch, adv_batch, rtg_batch] = buffer.get_batch();

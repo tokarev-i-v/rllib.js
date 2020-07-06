@@ -1,10 +1,5 @@
 const { PPOContinuous } = require("./PPO")
 
-const resolves = {}
-const rejects = {}
-let globalMsgId = 0;
-
-// import {PPOContinuous} from PPO;
 var agent = {
     observation_space: [],
     action_space: []
@@ -35,12 +30,12 @@ function env_reset(){
 
 self.env = env;
 function makeStep(){
-    console.log("start of makestep");
+    // console.log("start of makestep");
     return new Promise(function (resolve, reject) {
-        console.log("On send action, ", self.env.action);
+        // console.log("On send action, ", self.env.action);
         self.resolve = resolve;
         self.onmessage = function(e){
-            console.log("ONMESSAGE");
+            // console.log("ONMESSAGE");
             self.env.n_obs = e.data.n_obs;
             self.env.e_l = e.data.e_l;
             self.env.e_r = e.data.e_r;
@@ -53,7 +48,7 @@ function makeStep(){
 
 //at first we get "agent" and "env"
 self.onmessage = function(e){
-    console.log("PPOworker first onmessage");
+    // console.log("PPOworker first onmessage");
     agent.observation_space = e.data.observation_space;
     agent.action_space = e.data.action_space;
     env.n_obs = e.data.n_obs;

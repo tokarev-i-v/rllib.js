@@ -18,15 +18,19 @@ PPOworker.onmessage = function(e){
     var step_data = w.step(e.data.action);
     PPOworker.postMessage({step_data: step_data, n_obs: w.n_obs, e_r: w.get_episode_reward(), e_l: w.get_episode_length()});
 }
-PPOworker.postMessage({
-    observation_space: a.observation_space,
-    action_space: a.action_space,
-    n_obs: w.n_obs
-});
-
-
-// tf.setBackend("cpu").then(()=>{
-
-    
+// PPOworker.postMessage({
+//     observation_space: a.observation_space,
+//     action_space: a.action_space,
+//     n_obs: w.n_obs
 // });
+
+
+tf.setBackend("webgl").then(()=>{
+    PPOworker.postMessage({
+        observation_space: a.observation_space,
+        action_space: a.action_space,
+        n_obs: w.n_obs
+    });
+    
+});
 

@@ -516,8 +516,8 @@ export class FlatAreaEatWorld_c {
         v.normalize();
         v.multiplyScalar(a.speed);
         a.position.add(v);
-        a.rotation.x += a.rot1;
-        a.rotation.y += a.rot2;
+        a.rotation.z += a.rot1;
+        // a.rotation.y += a.rot2;
         
         // agent is trying to move from p to op. Check walls
         var res = this.stuff_collide_(a.frontEye, true, false);
