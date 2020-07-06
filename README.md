@@ -8,7 +8,8 @@ Starting example:
 ```bash
 git clone https://github.com/polyzer/rllib.js.git  
 npm i  
-npm run watch  
+npm run dqn  
+npm run ppo
 ```
 ## Algorithms:  
 Deep Q-learning:  
@@ -19,12 +20,13 @@ Deep Q-learning:
 Policy gradient:  
 - [ ] REINFORCE  
 - [ ] Actor-Critic  
-- [ ] PPO  
+- [x] PPO  
 - [ ] TRPO  
 
 ## Environments:
 Without physics:  
-Flat world 3D.  
+Flat world 3D. 
+Discrete and continuous versions.
 * Agent have 10 eye-detectors.  
 * Target: Agent trying to learn eating only green items if he see them.  
 * Actions: turns on specified angles.  
