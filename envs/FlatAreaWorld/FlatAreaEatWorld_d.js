@@ -93,7 +93,7 @@ class Agent{
         let mesh = eye.view;
         this.view.add(mesh);
         this.eyes.push(eye);
-        alpha += 20;
+        alpha += 10;
     }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
@@ -118,7 +118,7 @@ class Agent{
   }
   
 
-  forward() {
+  async forward() {
     // in forward pass the agent simply behaves in the environment
     // create input to brain
     var num_eyes = this.eyes.length;
@@ -136,13 +136,17 @@ class Agent{
     }
     
     // get action from brain
-    var actionix = this.brain.forward(input_array);
+    var actionix = await this.brain.forward(input_array);
     var action = this.actions[actionix];
     this.actionix = actionix; //back this up
     
     // demultiplex into behavior variables
-    this.rot1 = action[0]*1;
-    this.rot2 = action[1]*1;
+    if(action){
+      this.rot1 = action[0]*1;
+      this.rot2 = action[1]*1;  
+    } else {
+      console.log("Have no action");
+    }
     
     //this.rot1 = 0;
     //this.rot2 = 0;
@@ -157,7 +161,7 @@ class Agent{
       var e = this.eyes[i];
       // agents dont like to see walls, especially up close
       // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
-      proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
+      // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
       // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
     }
     // console.log("num_eyes: %s ", num_eyes);    
@@ -515,8 +519,8 @@ export default class FlatAreaEatWorld {
             var rescheck = this.stuff_collide_(a.frontEye, true, false);
             if(!rescheck) { 
               // ding! nom nom nom
-              if(it.type === 1) a.digestion_signal += 0.5; // mmm delicious apple
-              if(it.type === 2) a.digestion_signal += -0.6; // ewww poison
+              if(it.type === 1) a.digestion_signal += 0.99; // mmm delicious apple
+              if(it.type === 2) a.digestion_signal += -0.99; // ewww poison
               this.removeItem(it);
               i--;
               n--;

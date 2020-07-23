@@ -4,7 +4,6 @@ import * as tf from '@tensorflow/tfjs';
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
 });
-
 /**
  * PASSED
  * @param {tf.Tensor} new_p 
@@ -123,6 +122,68 @@ export class Buffer{
     }
 }
 
+
+/**
+ * PASSED
+ * Contains replaybuffer for PPO.
+ */
+export class Buffer_a{
+
+    constructor(gamma=0.99, lam=0.95){
+        this.gamma = gamma;
+        this.lam = lam;
+        this.adv = [];
+        this.ob = [];
+        this.ac = [];
+        this.rtg = [];
+    }
+    store(temp_states, temp_rewards, temp_actions, temp_values, last_sv){
+        if (temp_states.length > 0){
+            tf.tidy(()=>{
+                let t_s = tf.tensor(temp_states);
+                let t_r = tf.tensor(temp_rewards);
+                let t_a = tf.tensor(temp_actions);
+                let t_v = tf.tensor(temp_values);
+                // console.log("store 0", temp_traj[0]);
+                this.ob.push(t_s.dataSync());
+                // this.ob = tf.keep(this.ob.concat(tens.slice([0], [temp_traj.length,1]).flatten()));
+                // console.log("store 1");
+                // this.ob.print();
+                let rtg = discounted_rewards(t_r.flatten(), last_sv, this.gamma);
+                // console.log("store 2");
+                this.adv.push(GAE(t_r.flatten(), t_v.flatten(), last_sv, this.gamma, this.lam).dataSync());
+                // console.log("store 3");
+                // this.adv.print();
+                // console.log(this.adv.shape);
+                this.rtg.push(rtg.dataSync());
+                // console.log("store 4");
+                // this.rtg.print();
+                this.ac.push(t_a.dataSync());    
+                // console.log("store 5");
+                // console.log(this.ob.shape);
+                // console.log(this.adv.shape);
+                // console.log(this.rtg.shape);
+                // console.log(this.ac.shape);
+            });
+        }
+    }
+    get_batch(){
+        return tf.tidy(()=> {
+            let adv = tf.keep(tf.tensor(this.adv));
+            let ob = tf.keep(tf.tensor(this.ob));
+            let ac = tf.tensor(this.ac);
+            let rtg = tf.keep(tf.tensor(this.rtg));
+            
+            let norm_adv = tf.keep(adv.sub(adv.mean()).div(tf.moments(adv).variance.sqrt().add(tf.scalar(1e-10))));
+            return [ob, ac, norm_adv, rtg];    
+        });
+    }
+    len(){
+        return this.ob.shape[0];
+    }
+}
+
+
 /**
  * 
  * @param {tf.Tensor} p_logits 
@@ -164,7 +225,6 @@ export function get_p_log_discrete(p_logits, act_ph, act_dim, log_std){
     return tf.tidy(()=>{
         let act_onehot = tf.oneHot(act_ph, depth=act_dim);
         return tf.sum(act_onehot.mul(tf.logSoftmax(p_logits), axis=-1));    
-    
     })
 }
 
@@ -196,8 +256,8 @@ function mlp(x, hidden_layers, output_size, activation='relu', last_activation='
     return tf.tidy(()=>{
         let inputt = tf.input({shape: [null, x[0]]});
         x = inputt;
-        for(let l=0; l < hidden_layers; l++){
-            x = tf.layers.dense({units:l, activation:activation}).apply(x);
+        for(let l=0; l < hidden_layers.length; l++){
+            x = tf.layers.dense({units:hidden_layers[l], activation:activation}).apply(x);
         }
         let output = tf.layers.dense({units: output_size[0], activation: last_activation}).apply(x);
         return tf.keep(tf.model({inputs:inputt, outputs:output}));
@@ -214,12 +274,18 @@ export function PPO(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_e
 }
 
 function PPODiscrete(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
-    actor_iter=5, critic_iter=10, steps_per_env=5){
+    actor_iter=500, critic_iter=500, steps_per_env=5){
     
     return;
 }
 
 export async function PPOContinuous(opt){
+
+    const loadModels = async function(){
+        const saveResult = await p_logits.save('downloads://ppo_policy');
+    };
+
+
     // tf.tidy(()=>{
         let env = opt.env;
         let agent = opt.agent;
@@ -272,12 +338,12 @@ export async function PPOContinuous(opt){
                 for(let i=0; i < steps_per_env; i++){
                     // console.log(i);
                     let nobs = tf.tensor([env.n_obs]);
-                    nobs = tf.expandDims(nobs, 0);
+                    let nobs_e = tf.expandDims(nobs, 0);
                     let p_logits_val = p_logits.apply(nobs);
                     let p_noisy_val = p_noisy(p_logits_val, log_std);
-                    let act = act_smp(p_noisy_val, low_action_space, high_action_space);
+                    let act1 = act_smp(p_noisy_val, low_action_space, high_action_space);
                     let val = s_values.apply(nobs);
-                    act = tf.squeeze(act);
+                    let act = tf.squeeze(act1);
                     env.action = act.dataSync();
                     // console.log(act.dataSync());
                     let [obs2, rew, done, _] = await env.step();
@@ -285,7 +351,8 @@ export async function PPOContinuous(opt){
                     temp_states.push([env.n_obs.slice()])
                     temp_rewards.push([rew]);
                     temp_actions.push([act.dataSync()]);
-                    temp_values.push([tf.squeeze(val).dataSync()]);
+                    let squeezed_val = tf.squeeze(val);
+                    temp_values.push([squeezed_val.dataSync()]);
                     env.n_obs = obs2.slice()
                     step_count += 1
                     if (done){
@@ -299,12 +366,29 @@ export async function PPOContinuous(opt){
                         
                         env.reset()           
                     }
+                    nobs.dispose();
+                    p_logits_val.dispose();
+                    nobs_e.dispose();
+                    p_noisy_val.dispose();
+                    val.dispose();
+                    squeezed_val.dispose();
+                    act1.dispose();
+                    act.dispose();
                 }
 
                 let nobs = tf.tensor([env.n_obs]);
                 nobs = tf.expandDims(nobs, 0);
                 let last_v = s_values.apply(nobs);
                 buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v);
+                for(let i = 0; i < temp_states.length; i++){
+                    temp_states[i].dispose();
+                }
+                for(let i = 0; i < temp_actions.length; i++){
+                    temp_actions[i].dispose();
+                }
+                for(let i = 0; i < temp_values.length; i++){
+                    temp_states[i].dispose();
+                }
 
             }
             // console.log("on end");
@@ -334,6 +418,7 @@ export async function PPOContinuous(opt){
                 let gradients = tf.variableGrads(p_loss, p_logits.getWeights());
                 p_opt.applyGradients(gradients.grads);
                 tf.dispose(gradients);
+                tf.dispose(gat_tensor);
             }
 
         }
@@ -352,13 +437,18 @@ export async function PPOContinuous(opt){
                 let  gradients = tf.variableGrads(v_loss, s_values.getWeights());
                 v_opt.applyGradients(gradients.grads);
                 tf.dispose(gradients);
+                tf.dispose(gat_tensor);
             }    
             
 
         }
-        
+        obs_batch.dispose();
+        act_batch.dispose();
+        adv_batch.dispose();
+        rtg_batch.dispose();
+
+        // loadModels();
         }
-    
     // });
 
 }

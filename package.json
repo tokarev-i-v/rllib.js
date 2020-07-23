@@ -21,13 +21,12 @@
     "jasmine": "^3.5.0",
     "mocha": "^8.0.1",
     "src": "^1.1.2",
-    "tensorflow": "^0.7.0",
-    "tfjs": "^0.6.0"
+    "tensorflow": "^0.7.0"
   },
   "scripts": {
-    "dqn": "cross-env NODE_ENV=development parcel dqn.html --no-hmr --target browser --global window",
-    "ppo": "cross-env NODE_ENV=development parcel ppo_web_worker.html ./agents/policy_gradients/ppo_worker.js --no-hmr --target browser --global window",
-    "build": "cross-env NODE_ENV=production parcel build index.html --target browser --out-dir build --public-url ./",
+    "dqn": "cross-env NODE_ENV=development parcel dqn.html --open --no-hmr --target browser --global window",
+    "ppo": "cross-env NODE_ENV=development parcel ppo_web_worker.html ./agents/policy_gradients/ppo_worker.js --open --no-hmr --target browser --global window",
+    "build": "cross-env NODE_ENV=production parcel build dqn.html --target browser --out-dir build --public-url ./",
     "test": "babel-node --inspect tests.js",
     "lint": "eslint ."
   },

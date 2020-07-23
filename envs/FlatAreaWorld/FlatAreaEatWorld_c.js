@@ -1,13 +1,41 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
+import * as tfvis from '@tensorflow/tfjs-vis'
 import * as THREE from '../../src/jsm/three.module';
 import {ColladaLoader} from '../../src/jsm/ColladaLoader';
 import {FlyControls} from '../../src/jsm/FlyControls';
 import Stats from '../../src/jsm/stats.module';
+
 var canvas, ctx;
 
 function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
+}
+
+
+class Buffer{
+  constructor(minsize, size){
+    this.v = [];
+    this.size = typeof(size)==='undefined' ? 100 : size;
+    this.minsize = typeof(minsize)==='undefined' ? 20 : minsize;
+    this.sum = 0;
+  }
+  add(x) {
+    this.v.push(x);
+    this.sum += x;
+    if(this.v.length>this.size) {
+      var xold = this.v.shift();
+      this.sum -= xold;
+    }
+  }
+  get_average() {
+    if(this.v.length < this.minsize) return -1;
+    else return this.sum/this.v.length;
+  }
+  reset(x) {
+    this.v = [];
+    this.sum = 0;
+  }
 }
 
 function getRandomInt(min, max) {
@@ -123,7 +151,7 @@ export class Agent{
         let mesh = eye.view;
         this.view.add(mesh);
         this.eyes.push(eye);
-        alpha += 20;
+        alpha += 10;
     }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
@@ -141,10 +169,23 @@ export class Agent{
     this.rot1 = 0.0; // rotation speed of 1st wheel
     this.rot2 = 0.0; // rotation speed of 2nd wheel
     this.speed = 0.0;
+    this.average_reward_window = new Buffer(10, 1000);
+    this.displayHistoryData = [];
+    this.surface = { name: 'Mean reward', tab: 'Charts' };
+    setInterval(this.graphic_vis.bind(this), 1000);
   }
   
   sample_actions(){
     return this.action_space.sample();
+  }
+
+  graphic_vis(){
+    if (this.displayHistoryData.length > 1100){
+      this.displayHistoryData.splice(0,100);
+    }
+    this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
+    let data = {values: this.displayHistoryData};
+    tfvis.render.linechart(this.surface, data);
   }
 
   forward() {
@@ -176,7 +217,7 @@ export class Agent{
       var e = this.eyes[i];
       // agents dont like to see walls, especially up close
       // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
-      proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
+      // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
       // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
     }
     // console.log("num_eyes: %s ", num_eyes);    
@@ -193,6 +234,7 @@ export class Agent{
     // console.log("dig: %s proximity_reward %s forward_reward %s reward: %s", digestion_reward, proximity_reward, forward_reward, reward);     
     // pass to brain for learning
     //this.brain.backward(reward);
+    this.average_reward_window.add(reward);
     return reward;
   }
 
@@ -550,8 +592,8 @@ export class FlatAreaEatWorld_c {
             var rescheck = this.stuff_collide_(a.frontEye, true, false);
             if(!rescheck) { 
               // ding! nom nom nom
-              if(it.type === 1) a.digestion_signal += 0.5; // mmm delicious apple
-              if(it.type === 2) a.digestion_signal += -0.6; // ewww poison
+              if(it.type === 1) a.digestion_signal += 0.99; // mmm delicious apple
+              if(it.type === 2) a.digestion_signal += -0.99; // ewww poison
               this.removeItem(it);
               i--;
               n--;

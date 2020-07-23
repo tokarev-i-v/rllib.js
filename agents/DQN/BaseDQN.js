@@ -16,11 +16,6 @@ function getRandomInt(min, max) {
 }
 
 export class ReplayMemory {
-  /**
-   * Constructor of ReplayMemory.
-   *
-   * @param {number} maxLen Maximal buffer length.
-   */
   constructor(maxLen) {
     this.maxLen = maxLen;
     this.buffer = [];
@@ -34,11 +29,6 @@ export class ReplayMemory {
       
   }
 
-  /**
-   * Append an item to the replay buffer.
-   *
-   * @param {any} item The item to append.
-   */
   append(item) {
     this.buffer[this.index] = item;
     this.length = Math.min(this.length + 1, this.maxLen);
@@ -49,14 +39,6 @@ export class ReplayMemory {
   setItem(item, index){
     this.buffer[index] = item;
   }
-  /**
-   * Randomly sample a batch of items from the replay buffer.
-   *
-   * The sampling is done *without* replacement.
-   *
-   * @param {number} batchSize Size of the batch.
-   * @return {Array<any>} Sampled items.
-   */
   sample(batchSize) {
     if (batchSize > this.maxLen) {
       throw new Error(
@@ -104,7 +86,7 @@ export default class DQN{
       this.experience_size = typeof opt.experience_size !== 'undefined' ? opt.experience_size : 30000;
       this.start_learn_threshold = typeof opt.start_learn_threshold !== 'undefined'? opt.start_learn_threshold : Math.floor(Math.min(this.experience_size*0.1, 1000)); 
       this.gamma = typeof opt.gamma !== 'undefined' ? opt.gamma : 0.8;
-      this.learning_steps_total = typeof opt.learning_steps_total !== 'undefined' ? opt.learning_steps_total : 100000;
+      this.learning_steps_total = typeof opt.learning_steps_total !== 'undefined' ? opt.learning_steps_total : 10000;
       this.learning_steps_burnin = typeof opt.learning_steps_burnin !== 'undefined' ? opt.learning_steps_burnin : 3000;
       this.epsilon_min = typeof opt.epsilon_min !== 'undefined' ? opt.epsilon_min : 0.05;
       this.epsilon_test_time = typeof opt.epsilon_test_time !== 'undefined' ? opt.epsilon_test_time : 0.01;
@@ -141,9 +123,9 @@ export default class DQN{
       this.reward_window = new Array(this.window_size);
       this.net_window = new Array(this.window_size);
       this.NN = new tf.sequential();
-      this.NN.add(tf.layers.dense({inputShape: [this.input_shape], units:100, activation: 'relu'}));
-      this.NN.add(tf.layers.dense({units:70, activation: 'relu'}));
-      this.NN.add(tf.layers.dense({units:30, activation: 'relu'}));
+      this.NN.add(tf.layers.dense({inputShape: [this.input_shape], units:200, activation: 'relu'}));
+      this.NN.add(tf.layers.dense({units:128, activation: 'relu'}));
+      this.NN.add(tf.layers.dense({units:64, activation: 'relu'}));
       this.NN.add(tf.layers.dense({
         units: this.num_actions,
         kernelRegularizer: tf.regularizers.l2(),
@@ -151,7 +133,7 @@ export default class DQN{
         name: "outter"
       }));
       this.BATCH_SIZE = 64;
-      this.optimizer = tf.train.sgd(0.01);
+      this.optimizer = tf.train.adam(0.01);
       this.experience = new ReplayMemory(this.experience_size);
       this.age = 0; // incremented every backward()
       this.forward_passes = 0; // incremented every forward()
@@ -163,7 +145,9 @@ export default class DQN{
       this.learning = true;
       
       this.displayHistoryData = [];
-      this.surface = { name: 'Line chart', tab: 'Charts' };
+      this.surface = { name: 'Mean reward', tab: 'Charts' };
+
+      setInterval(this.graphic_vis.bind(this), 1000);
     }
 
     getNetInput(xt) {
@@ -190,8 +174,8 @@ export default class DQN{
         let tens = tf.tensor(s);
         let tens1 = tens.reshape([1, this.input_shape]);
         var action_values = this.NN.apply(tens1);
-        var argm = await action_values.argMax(1).dataSync()[0];
-        var val = await action_values.max().dataSync()[0];
+        var argm = action_values.argMax(1).dataSync()[0];
+        var val = action_values.max().dataSync()[0];
         let ret = {action: argm, value: val };
         tf.dispose(action_values);
         tf.dispose(tens1);
@@ -199,7 +183,7 @@ export default class DQN{
         return ret;
       }
 
-      forward(input_array) {
+      async forward(input_array) {
         this.forward_passes += 1;
         this.last_input_array = input_array; // back this up
         
@@ -217,7 +201,7 @@ export default class DQN{
             action = this.random_action();
           } else {
             // otherwise use our policy to make decision
-            var maxact = this.policy(net_input);
+            var maxact = await this.policy(net_input);
             action = maxact.action;
          }
         } else {
@@ -236,6 +220,12 @@ export default class DQN{
         this.action_window.push(action);
         
         return action;
+      }
+
+      graphic_vis(){
+        this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
+        let data = {values: this.displayHistoryData};
+        tfvis.render.linechart(this.surface, data);
       }
 
       random_action() {
@@ -279,7 +269,8 @@ export default class DQN{
           let y_s = tf.tensor(y_new);
           let output = this.NN.apply(x_tensor);
           output = output.reshape([output.shape[1]]);
-          const loss = tf.mulStrict(output, y_s).sub(y_tensor).square().sum().mul(0.5);
+          // const loss = tf.mulStrict(output, y_s).sub(y_tensor).square().sum().mul(0.5);
+          const loss = output.sub(y_tensor).square().sum().mul(0.5);
           return loss;
         });
         if(this.experience.length > this.start_learn_threshold) {
@@ -287,7 +278,7 @@ export default class DQN{
           for(var k=0;k < this.BATCH_SIZE;k++) {
             var e = samples[k];
             var x = e[0];
-            var maxact = this.policy(e[3]);
+            var maxact = await this.policy(e[3]);
             var r = e[2] + this.gamma * maxact.value;
             var y = new Array(this.num_actions); for (let i=0; i<this.num_actions; ++i) y[i] = 0;
             y[e[1]] = r;
@@ -297,18 +288,11 @@ export default class DQN{
             var grads = tf.variableGrads(lossFunction, this.NN.getWeights());
             this.optimizer.applyGradients(grads.grads);
             tf.dispose(grads);
-            // avcost += lossFunction().dataSync()[0];
           }
-  
-          // avcost = avcost/this.BATCH_SIZE;
-          // this.average_loss_window.add(avcost);
-          // console.log("avg: %s", this.average_reward_window.get_average());
           if (this.displayHistoryData.length > 1100){
             this.displayHistoryData.splice(0,100);
           }
-          this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
-          let data = {values: this.displayHistoryData};
-          tfvis.render.linechart(this.surface, data);
+          
         }
       }
 }
