@@ -37,7 +37,7 @@ function makeStep(){
         self.resolve = resolve;
         self.onmessage = function(e){
             // console.log("ONMESSAGE");
-            self.env.n_obs = e.data.n_obs;
+            // self.env.n_obs = e.data.n_obs;
             self.env.e_l = e.data.e_l;
             self.env.e_r = e.data.e_r;
             self.resolve(e.data.step_data);   
@@ -55,7 +55,7 @@ tf.setBackend("cpu").then(()=>{
         agent.action_space = e.data.action_space;
         env.n_obs = e.data.n_obs;
         PPOContinuous({env: env, agent: agent, hidden_sizes:[128,128,64,64], cr_lr:5e-4, ac_lr:2e-4, gamma:0.99, lam:0.95, steps_per_env:1000, 
-            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:500, minibatch_size:64});
+            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:256});
     
     }    
 });

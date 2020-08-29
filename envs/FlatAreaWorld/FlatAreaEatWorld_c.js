@@ -355,6 +355,7 @@ export class FlatAreaEatWorld_c {
 
       this.rew_episode = 0;
       this.len_episode = 0;
+      this.need_reset_env = 0;
 
       // set up food and poison
       this.items = []
@@ -456,11 +457,11 @@ export class FlatAreaEatWorld_c {
     }
 
     get_episode_reward(){
-      return this.rew_episode
+      return this.rew_episode;
     }
 
     get_episode_length(){
-      return this.len_episode
+      return this.len_episode;
     }
 
 
@@ -519,7 +520,10 @@ export class FlatAreaEatWorld_c {
     }
 
     tick(action) {
-
+      if (this.need_reset_env){
+        this.reset();
+        this.need_reset_env = 0;
+      }
       let state, done, reward;
 
       // tick the environment
@@ -570,10 +574,10 @@ export class FlatAreaEatWorld_c {
         }
         
         // handle boundary conditions
-        if(a.position.x<0)a.position.x=0;
-        if(a.position.x>this.W)a.position.x=this.W;
-        if(a.position.y<0)a.position.y=0;
-        if(a.position.y>this.H)a.position.y=this.H;
+        if(a.position.x< -this.W/2)a.position.x=-this.W/2;
+        if(a.position.x>this.W/2)a.position.x=this.W/2;
+        if(a.position.z< -this.H/2)a.position.z=-this.H/2;
+        if(a.position.z>this.H/2)a.position.z=this.H/2;
       }
       
       // tick all items
@@ -617,13 +621,18 @@ export class FlatAreaEatWorld_c {
         rewards.push(this.agents[i].backward());
       }
       done = 0;
-      if(this.clock > 2){
-        done = true;
-      }
+
       state = states[0];
       reward = rewards[0];
       let info = {};
-      return [state, reward, done, info];
+      
+      let ret_data = [state, reward, done, info];
+      if(this.clock % 1000 == 0){
+        done = true;
+        ret_data[2] = done;
+        this.need_reset_env = 1;
+      }
+      return ret_data; 
     }
   }
   

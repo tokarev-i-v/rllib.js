@@ -20,6 +20,7 @@
     "express": "^4.17.1",
     "jasmine": "^3.5.0",
     "mocha": "^8.0.1",
+    "puppeteer": "^5.2.1",
     "src": "^1.1.2",
     "tensorflow": "^0.7.0"
   },

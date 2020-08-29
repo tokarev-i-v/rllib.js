@@ -21,7 +21,7 @@ export const clipped_surrogate_obj = (new_p, old_p, adv, eps) => tf.tidy(()=>{
     if (eps instanceof tf.Tensor){
         eps = eps.dataSync()[0];
     }
-    let rt = new_p.sub(old_p).exp();
+    let rt = new_p.sub(old_p).exp().flatten();
     let rtmul = rt.mul(adv);
     let clipped = tf.clipByValue(rt, 1-eps, 1+eps).mul(adv);
     let minimum = tf.minimum(rtmul, clipped);
@@ -145,20 +145,20 @@ export class Buffer_a{
                 let t_a = tf.tensor(temp_actions);
                 let t_v = tf.tensor(temp_values);
                 // console.log("store 0", temp_traj[0]);
-                this.ob.push(t_s.dataSync());
+                this.ob = this.ob.concat(t_s.arraySync());
                 // this.ob = tf.keep(this.ob.concat(tens.slice([0], [temp_traj.length,1]).flatten()));
                 // console.log("store 1");
                 // this.ob.print();
                 let rtg = discounted_rewards(t_r.flatten(), last_sv, this.gamma);
                 // console.log("store 2");
-                this.adv.push(GAE(t_r.flatten(), t_v.flatten(), last_sv, this.gamma, this.lam).dataSync());
+                this.adv = this.adv.concat(GAE(t_r.flatten(), t_v.flatten(), last_sv, this.gamma, this.lam).arraySync());
                 // console.log("store 3");
                 // this.adv.print();
                 // console.log(this.adv.shape);
-                this.rtg.push(rtg.dataSync());
+                this.rtg = this.rtg.concat(rtg.arraySync());
                 // console.log("store 4");
                 // this.rtg.print();
-                this.ac.push(t_a.dataSync());    
+                this.ac = this.ac.concat(t_a.arraySync());    
                 // console.log("store 5");
                 // console.log(this.ob.shape);
                 // console.log(this.adv.shape);
@@ -179,7 +179,7 @@ export class Buffer_a{
         });
     }
     len(){
-        return this.ob.shape[0];
+        return this.ob.length;
     }
 }
 
@@ -246,7 +246,8 @@ export function get_p_log_cont(x, mean, log_std){
  */
 export function gaussian_log_likelihood(x, mean, log_std){
     return tf.tidy(()=>{
-        let log_p = x.sub(mean).square().div(log_std.exp().square().add(tf.scalar(1e-9))).add(log_std.mul(tf.scalar(2))).add(tf.scalar(2*Math.PI).log()).mul(tf.scalar(-0.5))
+        let divider = log_std.exp().square().add(tf.scalar(1e-9));
+        let log_p = x.sub(mean).square().div(divider).add(log_std.mul(tf.scalar(2))).add(tf.scalar(2*Math.PI).log()).mul(tf.scalar(-0.5))
         //log_p = -0.5 *((x-mean)**2 / (tf.exp(log_std)**2+1e-9) + 2*log_std + np.log(2*np.pi));
         return tf.keep(tf.sum(log_p, -1));    
     });
@@ -327,7 +328,7 @@ export async function PPOContinuous(opt){
         let step_count = 0;
         // console.log("Num epochs ", num_epochs);
         for(let ep=0; ep<num_epochs;ep++){
-            let buffer = new Buffer(gamma, lam);
+            let buffer = new Buffer_a(gamma, lam);
             let batch_rew = [];
             let batch_len = [];        
             for(let env of envs){
@@ -344,15 +345,14 @@ export async function PPOContinuous(opt){
                     let act1 = act_smp(p_noisy_val, low_action_space, high_action_space);
                     let val = s_values.apply(nobs);
                     let act = tf.squeeze(act1);
-                    env.action = act.dataSync();
-                    // console.log(act.dataSync());
+                    env.action = act.arraySync();
                     let [obs2, rew, done, _] = await env.step();
                     // console.log("after await");
                     temp_states.push([env.n_obs.slice()])
                     temp_rewards.push([rew]);
-                    temp_actions.push([act.dataSync()]);
+                    temp_actions.push([act.arraySync()]);
                     let squeezed_val = tf.squeeze(val);
-                    temp_values.push([squeezed_val.dataSync()]);
+                    temp_values.push([squeezed_val.arraySync()]);
                     env.n_obs = obs2.slice()
                     step_count += 1
                     if (done){
@@ -380,15 +380,15 @@ export async function PPOContinuous(opt){
                 nobs = tf.expandDims(nobs, 0);
                 let last_v = s_values.apply(nobs);
                 buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v);
-                for(let i = 0; i < temp_states.length; i++){
-                    temp_states[i].dispose();
-                }
-                for(let i = 0; i < temp_actions.length; i++){
-                    temp_actions[i].dispose();
-                }
-                for(let i = 0; i < temp_values.length; i++){
-                    temp_states[i].dispose();
-                }
+                // for(let i = 0; i < temp_states.length; i++){
+                //     temp_states[i].dispose();
+                // }
+                // for(let i = 0; i < temp_actions.length; i++){
+                //     temp_actions[i].dispose();
+                // }
+                // for(let i = 0; i < temp_values.length; i++){
+                //     temp_states[i].dispose();
+                // }
 
             }
             // console.log("on end");
