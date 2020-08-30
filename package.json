@@ -21,8 +21,7 @@
     "jasmine": "^3.5.0",
     "mocha": "^8.0.1",
     "puppeteer": "^5.2.1",
-    "src": "^1.1.2",
-    "tensorflow": "^0.7.0"
+    "src": "^1.1.2"
   },
   "scripts": {
     "dqn": "cross-env NODE_ENV=development parcel dqn.html --open --no-hmr --target browser --global window",
