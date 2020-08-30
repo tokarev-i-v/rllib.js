@@ -71,7 +71,7 @@ export const GAE = (rews, v, v_last, gamma=0.99, lam=0.95) => tf.tidy(()=>{
  * PASSED
  * Contains replaybuffer for PPO.
  */
-export class Buffer{
+class Buffer{
 
     constructor(gamma=0.99, lam=0.95){
         this.gamma = gamma;
@@ -282,11 +282,6 @@ function PPODiscrete(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_
 
 export async function PPOContinuous(opt){
 
-    const loadModels = async function(){
-        const saveResult = await p_logits.save('downloads://ppo_policy');
-    };
-
-
     // tf.tidy(()=>{
         let env = opt.env;
         let agent = opt.agent;
@@ -447,7 +442,6 @@ export async function PPOContinuous(opt){
         adv_batch.dispose();
         rtg_batch.dispose();
 
-        // loadModels();
         }
     // });
 

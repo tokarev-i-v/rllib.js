@@ -67,6 +67,6 @@
     "staticPath": "src/models",
     "watcherGlob": "**"
   },
-  "repository": "https://github.com/polyzer/q_deep_learn_tfjs.git",
+  "repository": "https://github.com/polyzer/rllib.js.git",
   "author": "polyzer <realpolyzer@yandex.ru>"
 }
