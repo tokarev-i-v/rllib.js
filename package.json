@@ -9,17 +9,17 @@
     "node": ">=8.9.0"
   },
   "dependencies": {
-    "@babel/node": "^7.10.1",
-    "@tensorflow/tfjs": "^2.0.1",
-    "@tensorflow/tfjs-core": "^2.0.1",
-    "@tensorflow/tfjs-node": "2.0.1",
-    "@tensorflow/tfjs-node-gpu": "2.0.1",
+    "@babel/node": "^7.10.5",
+    "@tensorflow/tfjs": "^2.3.0",
+    "@tensorflow/tfjs-core": "^2.3.0",
+    "@tensorflow/tfjs-node": "^2.3.0",
+    "@tensorflow/tfjs-node-gpu": "^2.3.0",
     "@tensorflow/tfjs-vis": "^1.4.3",
     "babel-node": "^0.0.1-security",
     "chai": "^4.2.0",
     "express": "^4.17.1",
-    "jasmine": "^3.5.0",
-    "mocha": "^8.0.1",
+    "jasmine": "^3.6.1",
+    "mocha": "^8.1.3",
     "puppeteer": "^5.2.1",
     "src": "^1.1.2"
   },
@@ -43,7 +43,7 @@
     "eslint": "^6.8.0",
     "eslint-config-google": "^0.9.1",
     "parcel-bundler": "~1.10.3",
-    "parcel-plugin-static-files-copy": "^2.4.3"
+    "parcel-plugin-static-files-copy": "^2.5.0"
   },
   "eslintConfig": {
     "extends": "google",

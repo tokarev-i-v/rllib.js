@@ -6,12 +6,34 @@ Live example: https://polyzer.github.io/rllib/build/ppo_web_worker.html
 
 ## Install and start example
 Starting example:
+
+### Linux  
 ```bash
 git clone https://github.com/polyzer/rllib.js.git  
-npm i  
-npm run dqn  
+npm i   
 npm run ppo
 ```
+
+### Windows  
+```bash
+git clone https://github.com/polyzer/rllib.js.git  
+npm i   
+npm run ppo
+```
+There, please follow in:
+```bash
+./dist/ppo_worker_main*.js
+```  
+and replace
+```javascript
+var PPOworker = new Worker("/agents\policy_gradients\ppo_worker.js");
+```  
+to
+```javascript
+var PPOworker = new Worker("/agents/policy_gradients/ppo_worker.js");
+```  
+[this issue](https://github.com/parcel-bundler/parcel/issues/1990)
+
 ## Algorithms:  
 Deep Q-learning:  
 - [x] Base Deep Q-learning  
