@@ -1,3 +1,10 @@
+/**
+ * In this env agent's target learn to eat greens as soon as possible.
+ * 
+ * Environment characteristics:
+ *  --type: continuous;
+ */
+
 // import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
 import * as tfvis from '@tensorflow/tfjs-vis'
@@ -5,69 +12,19 @@ import * as THREE from '../../src/jsm/three.module';
 import {ColladaLoader} from '../../src/jsm/ColladaLoader';
 import {FlyControls} from '../../src/jsm/FlyControls';
 import Stats from '../../src/jsm/stats.module';
-
-var canvas, ctx;
-
-function getRandomArbitrary(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
-
-class Buffer{
-  constructor(minsize, size){
-    this.v = [];
-    this.size = typeof(size)==='undefined' ? 100 : size;
-    this.minsize = typeof(minsize)==='undefined' ? 20 : minsize;
-    this.sum = 0;
-  }
-  add(x) {
-    this.v.push(x);
-    this.sum += x;
-    if(this.v.length>this.size) {
-      var xold = this.v.shift();
-      this.sum -= xold;
-    }
-  }
-  get_average() {
-    if(this.v.length < this.minsize) return -1;
-    else return this.sum/this.v.length;
-  }
-  reset(x) {
-    this.v = [];
-    this.sum = 0;
-  }
-}
-
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min; //Максимум не включается, минимум включается
-}
-
+import {params_setter, getRandomArbitrary, getRandomInt} from '../../src/jsm/utils';
+import {Buffer, BoxSpace} from '../../src/jsm/types';
 
 /**
- * Class describe continuous R^n space.
+ * Class describes targets, that must be eaten by agent.
+ * Charasteristics:
+ *  --reward: 0.99
  */
-class BoxSpace {
-  constructor(low=-1, high=1, shape=3){
-    this.low = low;
-    this.high = high;
-    this.shape = shape;
-    this.value = tf.tensor(Array(shape[0]).fill(0));
-  }
-  control(){
-    return tf.tidy(()=>{
-      return tf.keep(tf.clipByValue(rt, this.low, this.high));
-    });
-  }
-  sample(){
-    return tf.tidy(()=>{
-      return tf.keep(tf.randomUniform(this.shape));
-    });
-  }
-}
-
 class Food {
+  /**
+   * 
+   * @param {THREE.Vector3} pos position of the food 
+   */
   constructor(pos){
     this.rad = 1;
     this._view = new THREE.Mesh(
@@ -76,6 +33,7 @@ class Food {
     )
     this.age = 0;
     this.type = 1;
+    this.reward = 0.99;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type
@@ -93,7 +51,16 @@ class Food {
   }
 }
 
+/**
+ * Class describes targets, that must be eaten by agent.
+ * Charasteristics:
+ *  --reward: 0.99
+ */
 class Poison {
+  /**
+   * 
+ * @param {THREE.Vector3} pos
+   */
   constructor(pos){
     this.rad = 1;
     this._view = new THREE.Mesh(
@@ -102,6 +69,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
+    this.reward = -0.99;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -133,10 +101,8 @@ export class Agent{
       new THREE.BoxBufferGeometry(this.rad,this.rad,this.rad),
       new THREE.MeshBasicMaterial({color: 0xFFAA11})
     );
-    // this._view.rotation.x += Math.PI/2;
-
-    this.min_action = -10.0;
-    this.max_action = 10.0;
+    this.min_action = -1.0;
+    this.max_action = 1.0;
 
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
@@ -175,10 +141,16 @@ export class Agent{
     setInterval(this.graphic_vis.bind(this), 1000);
   }
   
+  /**
+   * @returns {BoxSpace} sampled action
+   */
   sample_actions(){
     return this.action_space.sample();
   }
 
+  /**
+   * Updates graphics
+   */
   graphic_vis(){
     if (this.displayHistoryData.length > 1100){
       this.displayHistoryData.splice(0,100);
@@ -187,35 +159,33 @@ export class Agent{
     let data = {values: this.displayHistoryData};
     tfvis.render.linechart(this.surface, data);
   }
-
-  forward() {
-    // in forward pass the agent simply behaves in the environment
-    // create input to brain
-    var num_eyes = this.eyes.length;
-    var input_array = new Array(num_eyes * 3);
-    for(var i=0;i<num_eyes;i++) {
-      var e = this.eyes[i];
-      input_array[i*3] = 1.0;
-      input_array[i*3+1] = 1.0;
-      input_array[i*3+2] = 1.0;
+  /**
+   * 
+   */
+  get_observation() {
+    let num_eyes = this.eyes.length;
+    let obs = new Array(num_eyes * 3);
+    for(let i=0;i<num_eyes;i++) {
+      let e = this.eyes[i];
+      obs[i*3] = 1.0;
+      obs[i*3+1] = 1.0;
+      obs[i*3+2] = 1.0;
       if(e.sensed_type !== -1) {
         // sensed_type is 0 for wall, 1 for food and 2 for poison.
         // lets do a 1-of-k encoding into the input array
-        input_array[i*3 + e.sensed_type] = e.sensed_proximity/e.max_range; // normalize to [0,1]
+        obs[i*3 + e.sensed_type] = e.sensed_proximity/e.max_range; // normalize to [0,1]
       }
     }
-    return input_array;
-    
+    return obs;
   }
 
-  backward() {
-    // in backward pass agent learns.
+  get_reward() {
     // compute reward 
     var proximity_reward = 0.0;
     var num_eyes = this.eyes.length;
     for(var i=0;i<num_eyes;i++) {
       var e = this.eyes[i];
-      // agents dont like to see walls, especially up close
+      // Here could be
       // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
       // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
       // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
@@ -230,10 +200,7 @@ export class Agent{
     // agents like to eat good things
     var digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
-    var reward = proximity_reward + forward_reward + digestion_reward; 
-    // console.log("dig: %s proximity_reward %s forward_reward %s reward: %s", digestion_reward, proximity_reward, forward_reward, reward);     
-    // pass to brain for learning
-    //this.brain.backward(reward);
+    var reward = proximity_reward + forward_reward + digestion_reward;   
     this.average_reward_window.add(reward);
     return reward;
   }
@@ -300,7 +267,7 @@ export class Eye{
    * @param {THREE.Mesh[]} targets array of intersection targets
    * @returns {Object|null} 
    */
-  getNearestCollision(targets_objs){
+  get_detection(targets_objs){
     let targets = targets_objs.map((el)=>{
         return el.view;
     });
@@ -339,19 +306,32 @@ export class Eye{
    * World Contains all features.
    */
 export class FlatAreaEatWorld_c {
-    constructor(opt){
 
+    /**
+     * 
+     * @param {*} opt parameters
+     * @param opt.algorithm RL algorithm
+     * @param opt.width worlds width
+     * @param opt.height worlds height
+     * @param opt.items_count items count in the world
+     * 
+     */
+    constructor(opt){
+      this.params_setter = params_setter.bind(this);
+
+      this._default_params = {
+        "items_count": 4000,
+        "W": 200,
+        "H": 200,
+        "algorithm": null
+      };
+
+      this.params_setter(this._default_params, opt);
 
       this.init();
       this.agents = [];
-
-      this.W = 200;
-      this.H = 200;
-
       this.clock = 0;
-      
       this.walls = []; 
-      var pad = 10;
 
       this.rew_episode = 0;
       this.len_episode = 0;
@@ -359,26 +339,30 @@ export class FlatAreaEatWorld_c {
 
       // set up food and poison
       this.items = []
-      for(var k=0;k<4000;k++) {
+
+      for(let k=0;k<this.items_count;k++) {
         this.generateItem();
       }
-      if(opt){
-        if(opt.algo){
-          let agent = new Agent({eyes_count: 10, algo: opt.agent});
-          this.Scene.add(agent.view);
-          this.agents.push(agent);  
-        }
-      
+
+      if(this.algorithm){
+        let agent = new Agent({eyes_count: 10, algo: this.algorithm});
+        this.Scene.add(agent.view);
+        this.agents.push(agent);        
       }
       this.render();
     }   
-
+    /**
+     * 
+     * @param {*} agent RL agent algorithm
+     */
     addAgent(agent){
       this.Scene.add(agent.view);
       this.agents.push(agent);
-      this.n_obs = this.agents[0].forward();
+      this.n_obs = this.agents[0].get_observation();
     }
-
+    /**
+     * generates food and poison
+     */
     generateItem(){
       var x = getRandomArbitrary(-this.W, this.W);
       var y = getRandomArbitrary(-this.H, this.H);
@@ -394,7 +378,6 @@ export class FlatAreaEatWorld_c {
     }
 
     init(json_params){
-      // if(typeof(document) !== typeof(undefined)){
         this.Container = document.createElement("div");
         this.Container.id = "MainContainer";
         this.Container.classList.add("Container");
@@ -415,10 +398,6 @@ export class FlatAreaEatWorld_c {
         this.Controls.rollSpeed = Math.PI / 8;
         this.Controls.autoForward = false;
         this.Controls.dragToLook = false;
-  
-      // } else {
-      //   this.Camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-      // }
 
 
       this.Camera.position.set(0,0, 10);
@@ -449,7 +428,7 @@ export class FlatAreaEatWorld_c {
     }
 
     reset(){
-        this.n_obs = this.agents[0].forward();
+        this.n_obs = this.agents[0].get_observation();
         this.rew_episode = 0;
         this.len_episode = 0;
         this.clock = 0;
@@ -477,10 +456,10 @@ export class FlatAreaEatWorld_c {
 
     // helper function to get closest colliding walls/items
     stuff_collide_(eye, check_walls, check_items) {
-      var minres = false;
+      let minres = false;
 
       if(check_walls) {
-          let res = eye.getNearestCollision(this.walls);
+          let res = eye.get_detection(this.walls);
           if(res) {
             res.type = 0; // 0 is wall
             if(!minres) { minres=res; }
@@ -488,7 +467,7 @@ export class FlatAreaEatWorld_c {
       }
       // collide with items
       if(check_items) {
-        let res = eye.getNearestCollision(this.items);
+        let res = eye.get_detection(this.items);
         if(res) {
           if(!minres) { minres=res; }
         }
@@ -551,7 +530,7 @@ export class FlatAreaEatWorld_c {
       let states = [];
       // let the agents behave in the world based on their input
       for(var i=0,n=this.agents.length;i<n;i++) {
-        states.push(this.agents[i].forward());
+        states.push(this.agents[i].get_observation());
       }
       
       // apply outputs of agents on evironment
@@ -612,13 +591,13 @@ export class FlatAreaEatWorld_c {
           n--;
         }
       }
-      if(this.items.length < 5000) {
+      if(this.items.length < this.items_count) {
         this.generateItem();
       }
       let rewards = [];
       // agents are given the opportunity to learn based on feedback of their action on environment
       for(var i=0,n=this.agents.length;i<n;i++) {
-        rewards.push(this.agents[i].backward());
+        rewards.push(this.agents[i].get_reward());
       }
       done = 0;
 

@@ -6,8 +6,6 @@ import {ColladaLoader} from '../../src/jsm/ColladaLoader';
 import {FlyControls} from '../../src/jsm/FlyControls';
 import Stats from '../../src/jsm/stats.module';
 
-var canvas, ctx;
-
 function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -46,7 +44,7 @@ function getRandomInt(min, max) {
 
 
 /**
- * Class describe continuous R^n space.
+ * Class describes continuous R^n space.
  */
 class BoxSpace {
   constructor(low=-1, high=1, shape=3){
@@ -135,8 +133,8 @@ export class Agent{
     );
     // this._view.rotation.x += Math.PI/2;
 
-    this.min_action = -10.0;
-    this.max_action = 10.0;
+    this.min_action = -1.0;
+    this.max_action = 1.0;
 
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;

@@ -4,16 +4,15 @@ tf.disableDeprecationWarnings();
 //import DQN from "./agents/DQN/BaseDQN";
 import {PPOContinuous} from "./agents/policy_gradients/PPO";
 //import FlatAreaEatWorld from "./envs/FlatAreaWorld/FlatAreaEatWorld_d"
-//import {FlatAreaEatWorld_c, Agent} from "./envs/FlatAreaWorld/FlatAreaEatWorld_c"
-import {TestWorld_c, Agent} from "./envs/TestWorld/TestWorld_c"
+import {FlatAreaEatWorld_c, Agent as FlatAgent} from "./envs/FlatAreaWorld/FlatAreaEatWorld_c"
+import {TestWorld_c, Agent as TestAgent} from "./envs/TestWorld/TestWorld_c"
 
+let curretWorldClass = TestWorld_c;
 
-
-// let world = new FlatAreaEatWorld({agent: DQN});
 var PPOworker = new Worker("agents/policy_gradients/ppo_worker.js");
 
-let a = new Agent({eyes_count: 10});
-let w = new TestWorld_c({});
+let a = new TestAgent({eyes_count: 10});
+let w = new curretWorldClass({});
 w.addAgent(a);
 PPOworker.onmessage = function(e){
     var step_data = w.step(e.data.action);
