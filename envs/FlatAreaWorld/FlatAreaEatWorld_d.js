@@ -397,7 +397,7 @@ export class FlatAreaEatWorld_d {
         this.Controls.movementSpeed = 13;
         this.Controls.rollSpeed = Math.PI / 8;
         this.Controls.autoForward = false;
-        this.Controls.dragToLook = false;
+        this.Controls.dragToLook = true;
 
 
       this.Camera.position.set(0,0, 10);
