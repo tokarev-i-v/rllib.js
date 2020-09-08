@@ -63,7 +63,7 @@
     "dist/"
   ],
   "staticFiles": {
-    "staticPath": "src/models",
+    "staticPath": ["src/models", "src/images"],
     "watcherGlob": "**"
   },
   "repository": "https://github.com/polyzer/rllib.js.git",

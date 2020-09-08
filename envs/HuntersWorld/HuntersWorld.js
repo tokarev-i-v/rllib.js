@@ -15,6 +15,15 @@ import Stats from '../../src/jsm/stats.module';
 import {params_setter, getRandomArbitrary, getRandomInt} from '../../src/jsm/utils';
 import {Buffer, BoxSpace} from '../../src/jsm/types';
 
+var CONSTANTS = {
+  "TYPES": {
+    "BULLET": 0,
+    "POISON": 1,
+    "APPLE": 2
+  }
+};
+
+
 /**
  * Class describes targets, that must be eaten by agent.
  * Charasteristics:
@@ -87,6 +96,48 @@ class Poison {
   }
 }
 
+
+/**
+ * Class describes bullet, that could be shotted by Agent.
+ */
+class Bullet {
+  /**
+   * 
+   * @param {THREE.Vector3} pos
+   * @param {THREE.Vector3} dir
+   */
+  constructor(pos, dir){
+    this.speed = 1;
+    this.dir = dir;
+    this.rad = 1;
+    this._view = new THREE.Mesh(
+      new THREE.SphereBufferGeometry(this.rad,this.rad,this.rad),
+      new THREE.MeshBasicMaterial({color: 0xFFF422})
+    )      
+    this._view.position.copy(pos);
+  }
+  get view(){
+    return this._view;
+  }
+  get position(){
+    return this._view.position;
+  }
+  set position(vec){
+    this._view.position.copy(vec);
+  }
+
+  update(time){
+    let v = this.dir.clone();
+    
+    if (time){
+      v.multiplyScalar(this.speed*time);
+    }else {
+      v.multiplyScalar(this.speed);
+    }
+    this.position.add(v);
+  }
+}
+
 /**
  * Agent from this world;
  */
@@ -97,14 +148,24 @@ export class Agent{
    */
   constructor(opt){
     this.rad = 2;
+
+    let materials = [
+	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // right
+	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // left
+	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // top
+	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // bottom
+	    new THREE.MeshStandardMaterial( { map: THREE.ImageUtils.loadTexture('./hunter_black_278.png') } ), // back
+	    new THREE.MeshStandardMaterial( { color: 0x000000 } )  // front
+	];
+
     this._view = new THREE.Mesh(
       new THREE.BoxBufferGeometry(this.rad,this.rad,this.rad),
-      new THREE.MeshBasicMaterial({color: 0xFFAA11})
+      new THREE.MultiMaterial( materials )
     );
     this.min_action = -1.0;
     this.max_action = 1.0;
 
-    this.action_space = new BoxSpace(this.min_action,this.max_action, [2]);
+    this.action_space = new BoxSpace(this.min_action,this.max_action, [4]);
     this.eyes_count = opt.eyes_count;
     this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
     console.log("Observation space shape: ", this.observation_space.shape);
@@ -132,7 +193,8 @@ export class Agent{
     this.reward_bonus = 0.0;
     this.digestion_signal = 0.0;
     // outputs on world
-    this.rot = 0.0; // rotation speed of 1st wheel
+    this.rot1 = 0.0; // rotation speed of 1st wheel
+    this.rot2 = 0.0; // rotation speed of 2nd wheel
     this.speed = 0.0;
     this.average_reward_window = new Buffer(10, 1000);
     this.displayHistoryData = [];
@@ -140,6 +202,13 @@ export class Agent{
     setInterval(this.graphic_vis.bind(this), 1000);
   }
   
+  fire(){
+    let dir = new THREE.Vector3(); 
+    this._view.getWorldDirection(dir);
+    let bullet = new Bullet(this.position.clone(), dir);
+    return bullet;
+  }
+
   /**
    * @returns {BoxSpace} sampled action
    */
@@ -284,27 +353,14 @@ export class Eye{
   }
 }
   
-  class Wall {
-    constructor(p1, p2){
-      this._view = new THREE.Mesh(
-        new THREE.CubeBufferGeometry(),
-        new THREE.MeshBasicMaterial({color: 0xf2f2f2})
-      );
-      this.type = 0;
-    }
-    get boundingBox(){
-      this._view.geometry.computeBoundingBox();
-      return this._view.geometry.boundingBox;
-    }
-  }
-  
-  
-  var Item = THREE.Object3D;
+
+
+
   /**
    * @class
    * World Contains all features.
    */
-export class FlatAreaEatWorld_c {
+export class HuntersWorld {
 
     /**
      * 
@@ -336,6 +392,8 @@ export class FlatAreaEatWorld_c {
       this.len_episode = 0;
       this.need_reset_env = 0;
 
+      this.bullets = [];
+
       // set up food and poison
       this.items = []
 
@@ -349,7 +407,7 @@ export class FlatAreaEatWorld_c {
         this.agents.push(agent);        
       }
       this.render();
-    }       
+    }   
     /**
      * 
      * @param {*} agent RL agent algorithm
@@ -377,28 +435,27 @@ export class FlatAreaEatWorld_c {
     }
 
     init(json_params){
-      this.Container = document.createElement("div");
-      this.Container.id = "MainContainer";
-      this.Container.classList.add("Container");
-      
-      this.Renderer = new THREE.WebGLRenderer();
-      this.Renderer.setSize(window.innerWidth, window.innerHeight);
-      this.Container.appendChild(this.Renderer.domElement);
+        this.Container = document.createElement("div");
+        this.Container.id = "MainContainer";
+        this.Container.classList.add("Container");
+        
+        this.Renderer = new THREE.WebGLRenderer();
+        this.Renderer.setSize(window.innerWidth, window.innerHeight);
+        this.Container.appendChild(this.Renderer.domElement);
+  
+        document.body.insertBefore( this.Container, document.body.firstChild);
+  
+        this.stats = new Stats();
+        document.body.appendChild(this.stats.dom);
 
-      document.body.insertBefore( this.Container, document.body.firstChild);
+        this.Camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
 
-      this.stats = new Stats();
-      document.body.appendChild(this.stats.dom);
+        this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
+        this.Controls.movementSpeed = 13;
+        this.Controls.rollSpeed = Math.PI / 8;
+        this.Controls.autoForward = false;
+        this.Controls.dragToLook = true;
 
-      this.Camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
-
-      this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
-      this.Controls.movementSpeed = 13;
-      this.Controls.rollSpeed = Math.PI / 8;
-      this.Controls.autoForward = false;
-      this.Controls.dragToLook = true;
-      
-      window.addEventListener("resize", this.onWindowResize.bind(this), false);        
 
       this.Camera.position.set(0,0, 10);
       this.Scene = new THREE.Scene();
@@ -427,11 +484,42 @@ export class FlatAreaEatWorld_c {
       }
     }
 
-    onWindowResize() {
-      this.Camera.aspect = window.innerWidth / window.innerHeight;
-      this.Camera.updateProjectionMatrix();
-      this.Renderer.setSize(window.innerWidth, window.innerHeight);
+  /*Функция проверяет пересечение пуль с уничтожаемыми объектами*/
+  controlCollision (delta)
+  {
+    let p_bbox = this.LocalPlayer.getBBox();
+
+    for(let i=0; i < this.Bullets.length; i++)
+    {
+      let bullet_bbox = this.Bullets[i].getBBox();
+      
+      for(let j=0; j< this.Hunters.length; j++)
+      {
+        let bbox = this.Hunters[j].getBBox();
+        if(bullet_bbox.intersectsBox(bbox))
+        {
+          this.Hunters[j].onHit({
+            Damage: this.Bullets[i].getDamage()
+          })
+          this.Bullets[i].onHit();
+        }			
+      }
+
+      for(let j=0; j< this.Beehives.length; j++)
+      {
+        let bbox = this.Beehives[j].getBBox();
+        if(bullet_bbox.intersectsBox(bbox))
+        {
+          this.Beehives[j].onHit({
+            Damage: this.Bullets[i].getDamage()
+          })
+          this.Bullets[i].onHit();
+        }			
+      }
     }
+  }
+
+
 
     reset(){
         this.n_obs = this.agents[0].get_observation();
@@ -461,16 +549,9 @@ export class FlatAreaEatWorld_c {
     }
 
     // helper function to get closest colliding walls/items
-    stuff_collide_(eye, check_walls, check_items) {
+    computeCollisions(eye, check_items) {
       let minres = false;
 
-      if(check_walls) {
-          let res = eye.get_detection(this.walls);
-          if(res) {
-            res.type = 0; // 0 is wall
-            if(!minres) { minres=res; }
-          }
-      }
       // collide with items
       if(check_items) {
         let res = eye.get_detection(this.items);
@@ -480,6 +561,7 @@ export class FlatAreaEatWorld_c {
       }
       return minres;
     }
+
     removeItem(it){
       this.Scene.remove(it.view);
       this.items.splice(this.items.indexOf(it), 1);
@@ -502,8 +584,13 @@ export class FlatAreaEatWorld_c {
     }
 
     tick(action) {
-      this.agents[0].rot = action[0];
-      this.agents[0].speed = action[1];  
+
+      this.agents[0].rot1 = action[0];
+      this.agents[0].rot2 = action[1];
+      this.agents[0].speed = action[2];  
+      if (action[3] > 0.5){
+        this.bullets.push(this.agent.fire());
+      }
       if (this.need_reset_env){
         this.reset();
         this.need_reset_env = 0;
@@ -520,8 +607,7 @@ export class FlatAreaEatWorld_c {
         var a = this.agents[i];
         for(var ei=0,ne=a.eyes.length;ei<ne;ei++) {
           var e = a.eyes[ei];
-          // we have a line from p to p->eyep
-          var res = this.stuff_collide_(e, true, true);
+          var res = this.computeCollisions(e, true, true);
           if(res) {
             // eye collided with wall
             e.sensed_proximity = res.dist;
@@ -547,12 +633,11 @@ export class FlatAreaEatWorld_c {
         v.normalize();
         v.multiplyScalar(a.speed);
         a.position.add(v);
-        a.rotation.y += a.rot;
+        a.rotation.y += a.rot1;
+        // a.rotation.y += a.rot2;
         
-        // agent is trying to move from p to op. Check walls
-        var res = this.stuff_collide_(a.frontEye, true, false);
+        var res = this.computeCollisions(a.frontEye, true, false);
         if(res) {
-          // wall collision! reset position
           a.position = a.op;
         }
         
@@ -573,12 +658,10 @@ export class FlatAreaEatWorld_c {
           var d = a.position.distanceTo(it.position);
           if(d < it.rad + a.rad) {
             
-            // wait lets just make sure that this isn't through a wall
-            var rescheck = this.stuff_collide_(a.frontEye, true, false);
+            var rescheck = this.computeCollisions(a.frontEye, true, false);
             if(!rescheck) { 
-              // ding! nom nom nom
-              if(it.type === 1) a.digestion_signal += 0.99; // mmm delicious apple
-              if(it.type === 2) a.digestion_signal += -0.99; // ewww poison
+              if(it.type === 1) a.digestion_signal += it.reward;
+              if(it.type === 2) a.digestion_signal += it.reward;
               this.removeItem(it);
               i--;
               n--;
@@ -597,7 +680,6 @@ export class FlatAreaEatWorld_c {
         this.generateItem();
       }
       let rewards = [];
-      // agents are given the opportunity to learn based on feedback of their action on environment
       for(var i=0,n=this.agents.length;i<n;i++) {
         rewards.push(this.agents[i].get_reward());
       }

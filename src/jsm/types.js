@@ -1,5 +1,8 @@
 import * as tf from '@tensorflow/tfjs';
 
+/**
+ * 
+ */
 export class Buffer{
     constructor(minsize, size){
       this.v = [];
@@ -39,9 +42,9 @@ export class BoxSpace {
     /**
      * @returns {tf.tensor1d}
      */
-    clip(){
+    clip(val){
       return tf.tidy(()=>{
-        return tf.keep(tf.clipByValue(rt, this.low, this.high));
+        return tf.keep(tf.clipByValue(val, this.low, this.high));
       });
     }
   
