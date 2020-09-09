@@ -8,11 +8,11 @@ import {FlatAreaEatWorld_c, Agent as FlatAgent} from "./envs/FlatAreaWorld/FlatA
 import {TestWorld_c, Agent as TestAgent} from "./envs/TestWorld/TestWorld_c"
 import {HuntersWorld, Agent as HunterAgent} from "./envs/HuntersWorld/HuntersWorld"
 
-let curretWorldClass = FlatAreaEatWorld_c;
+let curretWorldClass = HuntersWorld;
 
 var PPOworker = new Worker("agents/policy_gradients/ppo_worker.js");
 
-let a = new FlatAgent({eyes_count: 10});
+let a = new HunterAgent({eyes_count: 10});
 let w = new curretWorldClass({});
 w.addAgent(a);
 PPOworker.onmessage = function(e){

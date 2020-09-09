@@ -192,14 +192,11 @@ export class Agent{
     // console.log("num_eyes: %s ", num_eyes);    
     proximity_reward = proximity_reward/num_eyes;
     
-    // agents like to go straight forward
-    var forward_reward = 0.0;
-    if(this.actionix === 0 && proximity_reward > 0.75) forward_reward = 0.1 * proximity_reward;
     
     // agents like to eat good things
     var digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
-    var reward = proximity_reward + forward_reward + digestion_reward;   
+    var reward = proximity_reward + digestion_reward;   
     this.average_reward_window.add(reward);
     return reward;
   }
@@ -400,7 +397,7 @@ export class FlatAreaEatWorld_c {
       
       window.addEventListener("resize", this.onWindowResize.bind(this), false);        
 
-      this.Camera.position.set(0,0, 10);
+      this.Camera.position.set(0,10, 10);
       this.Scene = new THREE.Scene();
       this.Scene.background = new THREE.Color( 0xaaccff );
       this.Scene.fog = new THREE.FogExp2( 0xaaccff, 0.007 );

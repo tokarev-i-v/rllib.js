@@ -45,7 +45,8 @@ class Food {
     this.reward = 0.99;
     this.cleanup_ = false;
     this._view._rl = {
-      type: this.type
+      type: this.type,
+      obj: this
     }
     this._view.position.copy(pos);
   }
@@ -82,7 +83,8 @@ class Poison {
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
-      type: this.type
+      type: this.type,
+      obj: this
     }
   }
   get view(){
@@ -107,13 +109,15 @@ class Bullet {
    * @param {THREE.Vector3} dir
    */
   constructor(pos, dir){
-    this.speed = 1;
+    this.speed = 15;
     this.dir = dir;
-    this.rad = 1;
+    this.rad = 0.2;
+    this.way = new THREE.Vector3();
     this._view = new THREE.Mesh(
-      new THREE.SphereBufferGeometry(this.rad,this.rad,this.rad),
-      new THREE.MeshBasicMaterial({color: 0xFFF422})
+      new THREE.SphereBufferGeometry(this.rad,32,32),
+      new THREE.MeshBasicMaterial({color: 0xFF0000})
     )      
+    this._view.geometry.computeBoundingBox();
     this._view.position.copy(pos);
   }
   get view(){
@@ -135,6 +139,7 @@ class Bullet {
       v.multiplyScalar(this.speed);
     }
     this.position.add(v);
+    this.way.add(v);
   }
 }
 
@@ -165,7 +170,7 @@ export class Agent{
     this.min_action = -1.0;
     this.max_action = 1.0;
 
-    this.action_space = new BoxSpace(this.min_action,this.max_action, [4]);
+    this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
     this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
     console.log("Observation space shape: ", this.observation_space.shape);
@@ -193,8 +198,7 @@ export class Agent{
     this.reward_bonus = 0.0;
     this.digestion_signal = 0.0;
     // outputs on world
-    this.rot1 = 0.0; // rotation speed of 1st wheel
-    this.rot2 = 0.0; // rotation speed of 2nd wheel
+    this.rot = 0.0; // rotation speed of 1st wheel
     this.speed = 0.0;
     this.average_reward_window = new Buffer(10, 1000);
     this.displayHistoryData = [];
@@ -391,7 +395,7 @@ export class HuntersWorld {
       this.rew_episode = 0;
       this.len_episode = 0;
       this.need_reset_env = 0;
-
+      this.raycaster = new THREE.Raycaster();
       this.bullets = [];
 
       // set up food and poison
@@ -434,92 +438,80 @@ export class HuntersWorld {
       this.Scene.add(it.view);
     }
 
-    init(json_params){
-        this.Container = document.createElement("div");
-        this.Container.id = "MainContainer";
-        this.Container.classList.add("Container");
-        
-        this.Renderer = new THREE.WebGLRenderer();
-        this.Renderer.setSize(window.innerWidth, window.innerHeight);
-        this.Container.appendChild(this.Renderer.domElement);
-  
-        document.body.insertBefore( this.Container, document.body.firstChild);
-  
-        this.stats = new Stats();
-        document.body.appendChild(this.stats.dom);
+  init(json_params){
+    this.Container = document.createElement("div");
+    this.Container.id = "MainContainer";
+    this.Container.classList.add("Container");
+    
+    this.Renderer = new THREE.WebGLRenderer();
+    this.Renderer.setSize(window.innerWidth, window.innerHeight);
+    this.Container.appendChild(this.Renderer.domElement);
 
-        this.Camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
+    document.body.insertBefore( this.Container, document.body.firstChild);
 
-        this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
-        this.Controls.movementSpeed = 13;
-        this.Controls.rollSpeed = Math.PI / 8;
-        this.Controls.autoForward = false;
-        this.Controls.dragToLook = true;
+    this.stats = new Stats();
+    document.body.appendChild(this.stats.dom);
 
+    this.Camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
 
-      this.Camera.position.set(0,0, 10);
-      this.Scene = new THREE.Scene();
-      this.Scene.background = new THREE.Color( 0xaaccff );
-      this.Scene.fog = new THREE.FogExp2( 0xaaccff, 0.007 );
+    this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
+    this.Controls.movementSpeed = 13;
+    this.Controls.rollSpeed = Math.PI / 8;
+    this.Controls.autoForward = false;
+    this.Controls.dragToLook = true;
 
-      this.Loader = new ColladaLoader();
+    window.addEventListener("resize", this.onWindowResize.bind(this), false);
 
-      this.AmbientLight = new THREE.AmbientLight(0xFFFFFF, 0.9);
-      this.Scene.add(this.AmbientLight);
+    this.Camera.position.set(0,10, 10);
+    this.Scene = new THREE.Scene();
+    this.Scene.background = new THREE.Color( 0xaaccff );
+    this.Scene.fog = new THREE.FogExp2( 0xaaccff, 0.007 );
 
-      
-      this.Clock = new THREE.Clock();
+    this.Loader = new ColladaLoader();
 
-      if(typeof(document) !== typeof(undefined)){
-        let TextureLoader = new THREE.TextureLoader();
-        TextureLoader.load("grass.png", function (tex) {
-            tex.wrapS = THREE.RepeatWrapping;
-            tex.wrapT = THREE.RepeatWrapping;
-            tex.repeat.set(100, 100);
-            let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
-            ground.rotation.x -= Math.PI/2;
-            this.Scene.add(ground);
-        }.bind(this));
-  
-      }
-    }
+    this.AmbientLight = new THREE.AmbientLight(0xFFFFFF, 0.9);
+    this.Scene.add(this.AmbientLight);
 
-  /*Функция проверяет пересечение пуль с уничтожаемыми объектами*/
-  controlCollision (delta)
-  {
-    let p_bbox = this.LocalPlayer.getBBox();
+    
+    this.Clock = new THREE.Clock();
 
-    for(let i=0; i < this.Bullets.length; i++)
-    {
-      let bullet_bbox = this.Bullets[i].getBBox();
-      
-      for(let j=0; j< this.Hunters.length; j++)
-      {
-        let bbox = this.Hunters[j].getBBox();
-        if(bullet_bbox.intersectsBox(bbox))
-        {
-          this.Hunters[j].onHit({
-            Damage: this.Bullets[i].getDamage()
-          })
-          this.Bullets[i].onHit();
-        }			
-      }
+    if(typeof(document) !== typeof(undefined)){
+      let TextureLoader = new THREE.TextureLoader();
+      TextureLoader.load("grass.png", function (tex) {
+          tex.wrapS = THREE.RepeatWrapping;
+          tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(100, 100);
+          let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
+          ground.rotation.x -= Math.PI/2;
+          this.Scene.add(ground);
+      }.bind(this));
 
-      for(let j=0; j< this.Beehives.length; j++)
-      {
-        let bbox = this.Beehives[j].getBBox();
-        if(bullet_bbox.intersectsBox(bbox))
-        {
-          this.Beehives[j].onHit({
-            Damage: this.Bullets[i].getDamage()
-          })
-          this.Bullets[i].onHit();
-        }			
-      }
     }
   }
+    onWindowResize() {
+      this.Camera.aspect = window.innerWidth / window.innerHeight;
+      this.Camera.updateProjectionMatrix();
+      this.Renderer.setSize(window.innerWidth, window.innerHeight);
+    }
 
-
+    /*Функция проверяет пересечение пуль с уничтожаемыми объектами*/
+    controlBulletCollision (bullet, targets_objs)
+    {
+      let targets = targets_objs.map((el)=>{
+          return el.view;
+      });
+      let dst = new THREE.Vector3();
+      dst.setFromMatrixPosition( bullet.view.matrixWorld );
+      dst.add(bullet.position.clone().negate());
+      dst.normalize();
+      this.raycaster.set(bullet._view.position, dst);
+      let intersects = this.raycaster.intersectObjects(targets);
+      if (intersects.length > 0 && intersects[0].distance < 20){
+        return intersects[0].object._rl.obj;
+      } else {
+        return null;
+      }
+    }
 
     reset(){
         this.n_obs = this.agents[0].get_observation();
@@ -546,12 +538,31 @@ export class HuntersWorld {
       var delta = this.Clock.getDelta();
       
       this.Controls.update(delta);
+      for (let el of this.bullets){
+        el.update(delta);
+        let it = this.controlBulletCollision(el, this.items);
+        if(it){
+          if(it.type === 1) this.agents[0].digestion_signal += it.reward;
+          if(it.type === 2) this.agents[0].digestion_signal += it.reward;
+          this.removeItem(it);
+          this.removeBullet(el);
+        }else if (el.way.length() > 20){
+          this.removeBullet(el);
+        }
+      }
     }
 
     // helper function to get closest colliding walls/items
-    computeCollisions(eye, check_items) {
+    computeCollisions(eye, check_walls, check_items) {
       let minres = false;
 
+      if(check_walls) {
+          let res = eye.get_detection(this.walls);
+          if(res) {
+            res.type = 0; // 0 is wall
+            if(!minres) { minres=res; }
+          }
+      }
       // collide with items
       if(check_items) {
         let res = eye.get_detection(this.items);
@@ -583,13 +594,24 @@ export class HuntersWorld {
       this.step();
     }
 
+    addBullet(bullet){
+      this.bullets.push(bullet);
+      this.Scene.add(bullet.view);
+    }
+    removeBullet(bullet){
+      let index = this.bullets.indexOf(bullet);
+      this.bullets.splice(index, 1);
+      this.Scene.remove(bullet.view);
+    }
+
     tick(action) {
 
-      this.agents[0].rot1 = action[0];
-      this.agents[0].rot2 = action[1];
-      this.agents[0].speed = action[2];  
-      if (action[3] > 0.5){
-        this.bullets.push(this.agent.fire());
+      this.agents[0].rot = action[0];
+      this.agents[0].speed = action[1];  
+
+      if (action[2] > 0.5){
+        let bullet = this.agents[0].fire();
+        this.addBullet(bullet);
       }
       if (this.need_reset_env){
         this.reset();
@@ -633,8 +655,7 @@ export class HuntersWorld {
         v.normalize();
         v.multiplyScalar(a.speed);
         a.position.add(v);
-        a.rotation.y += a.rot1;
-        // a.rotation.y += a.rot2;
+        a.rotation.y += a.rot;
         
         var res = this.computeCollisions(a.frontEye, true, false);
         if(res) {
