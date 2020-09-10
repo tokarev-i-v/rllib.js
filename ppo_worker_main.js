@@ -7,13 +7,14 @@ import {PPOContinuous} from "./agents/policy_gradients/PPO";
 import {FlatAreaEatWorld_c, Agent as FlatAgent} from "./envs/FlatAreaWorld/FlatAreaEatWorld_c"
 import {TestWorld_c, Agent as TestAgent} from "./envs/TestWorld/TestWorld_c"
 import {HuntersWorld, Agent as HunterAgent} from "./envs/HuntersWorld/HuntersWorld"
-
+import {build_full_connected}  from './src/jsm/neuralnetworks';
 let curretWorldClass = HuntersWorld;
 
 var PPOworker = new Worker("agents/policy_gradients/ppo_worker.js");
 
 let a = new HunterAgent({eyes_count: 10});
 let w = new curretWorldClass({});
+// let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.action_space.shape, 'tanh', 'tanh');
 w.addAgent(a);
 PPOworker.onmessage = function(e){
     var step_data = w.step(e.data.action);
@@ -25,7 +26,8 @@ tf.setBackend("cpu").then(()=>{
     PPOworker.postMessage({
         observation_space: a.observation_space,
         action_space: a.action_space,
-        n_obs: w.n_obs
+        n_obs: w.n_obs,
+        // policy_nn: cur_nn
     });
     
 });

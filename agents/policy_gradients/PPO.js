@@ -1,5 +1,6 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
+import {build_full_connected}  from '../../src/jsm/neuralnetworks';
 
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
@@ -253,18 +254,6 @@ export function gaussian_log_likelihood(x, mean, log_std){
     });
 }
 
-function mlp(x, hidden_layers, output_size, activation='relu', last_activation='relu'){
-    return tf.tidy(()=>{
-        let inputt = tf.input({shape: [null, x[0]]});
-        x = inputt;
-        for(let l=0; l < hidden_layers.length; l++){
-            x = tf.layers.dense({units:hidden_layers[l], activation:activation}).apply(x);
-        }
-        let output = tf.layers.dense({units: output_size[0], activation: last_activation}).apply(x);
-        return tf.keep(tf.model({inputs:inputt, outputs:output}));
-    });
-}
-
 export function PPO(env, agent, hidden_sizes=[32], cr_lr=5e-3, ac_lr=5e-3, num_epochs=50, minibatch_size=5000, gamma=0.99, lam=0.95, number_envs=1, eps=0.1, 
     actor_iter=5, critic_iter=10, steps_per_env=100, action_type='Discrete'){
     if (action_type === "Discrete"){
@@ -309,13 +298,13 @@ export async function PPOContinuous(opt){
         let act_dim = agents[0].action_space.shape
     
         // console.log(act_dim, obs_dim);
-        let p_logits = mlp(obs_dim, hidden_sizes, act_dim, 'tanh', 'tanh');
+        let p_logits = build_full_connected(obs_dim, hidden_sizes, act_dim, 'tanh', 'tanh');
         let log_std = tf.variable(tf.fill(act_dim, -0.5), false, 'log_std');
         
         let p_noisy = get_p_noisy;
         let act_smp = act_smp_cont;
         let p_log = get_p_log_cont;
-        let s_values = mlp(obs_dim, hidden_sizes, [1], 'tanh', null);
+        let s_values = build_full_connected(obs_dim, hidden_sizes, [1], 'tanh', null);
         
         let p_opt = tf.train.adam(ac_lr);
         let v_opt = tf.train.adam(cr_lr);
