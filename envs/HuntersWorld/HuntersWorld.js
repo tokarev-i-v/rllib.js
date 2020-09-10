@@ -37,9 +37,10 @@ class Food {
   constructor(pos){
     this.rad = 1;
     this._view = new THREE.Mesh(
-      new THREE.SphereBufferGeometry(this.rad,this.rad,this.rad),
+      new THREE.SphereBufferGeometry(this.rad,32,10),
       new THREE.MeshBasicMaterial({color: 0x11FF11})
     )
+    this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
     this.reward = 0.99;
@@ -74,7 +75,7 @@ class Poison {
   constructor(pos){
     this.rad = 1;
     this._view = new THREE.Mesh(
-      new THREE.SphereBufferGeometry(this.rad,this.rad,this.rad),
+      new THREE.SphereBufferGeometry(this.rad,32,10),
       new THREE.MeshBasicMaterial({color: 0xFFF422})
     )      
     this.age = 0;
@@ -114,7 +115,7 @@ class Bullet {
     this.rad = 0.2;
     this.way = new THREE.Vector3();
     this._view = new THREE.Mesh(
-      new THREE.SphereBufferGeometry(this.rad,32,32),
+      new THREE.SphereBufferGeometry(this.rad,32,10),
       new THREE.MeshBasicMaterial({color: 0xFF0000})
     )      
     this._view.geometry.computeBoundingBox();
@@ -170,6 +171,7 @@ export class Agent{
     this.min_action = -1.0;
     this.max_action = 1.0;
 
+    this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
     this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
@@ -429,10 +431,10 @@ export class HuntersWorld {
       var y = getRandomArbitrary(-this.H, this.H);
       var t = getRandomInt(1, 3); // food or poison (1 and 2)
       if (t == 1){
-        var it = new Food(new THREE.Vector3(x, 0, y));
+        var it = new Food(new THREE.Vector3(x, 1, y));
       }
       else{
-        var it = new Poison(new THREE.Vector3(x, 0, y));
+        var it = new Poison(new THREE.Vector3(x, 1, y));
       }
       this.items.push(it);
       this.Scene.add(it.view);
@@ -548,6 +550,7 @@ export class HuntersWorld {
           this.removeBullet(el);
         }else if (el.way.length() > 20){
           this.removeBullet(el);
+          this.agents[0].digestion_signal += -0.99;
         }
       }
     }
