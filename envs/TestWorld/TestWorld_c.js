@@ -1,10 +1,10 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
 import * as tfvis from '@tensorflow/tfjs-vis'
-import * as THREE from '../../src/jsm/three.module';
-import {ColladaLoader} from '../../src/jsm/ColladaLoader';
-import {FlyControls} from '../../src/jsm/FlyControls';
-import Stats from '../../src/jsm/stats.module';
+import * as THREE from '../../src/jsm/threejs/three.module';
+import {ColladaLoader} from '../../src/jsm/threejs/ColladaLoader';
+import {FlyControls} from '../../src/jsm/threejs/FlyControls';
+import Stats from '../../src/jsm/threejs/stats.module';
 
 function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;

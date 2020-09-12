@@ -296,9 +296,9 @@ export async function PPOContinuous(opt){
         let low_action_space = agents[0].action_space.low
         let high_action_space = agents[0].action_space.high
         let act_dim = agents[0].action_space.shape
-    
-        // console.log(act_dim, obs_dim);
-        let p_logits = build_full_connected(obs_dim, hidden_sizes, act_dim, 'tanh', 'tanh');
+
+        let p_logits = (opt.policy_nn) ? opt.policy_nn : build_full_connected(obs_dim, hidden_sizes, act_dim, 'tanh', 'tanh');
+        
         let log_std = tf.variable(tf.fill(act_dim, -0.5), false, 'log_std');
         
         let p_noisy = get_p_noisy;

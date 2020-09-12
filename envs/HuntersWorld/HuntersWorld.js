@@ -8,10 +8,10 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
 import * as tfvis from '@tensorflow/tfjs-vis'
-import * as THREE from '../../src/jsm/three.module';
-import {ColladaLoader} from '../../src/jsm/ColladaLoader';
-import {FlyControls} from '../../src/jsm/FlyControls';
-import Stats from '../../src/jsm/stats.module';
+import * as THREE from '../../src/jsm/threejs/three.module';
+import {ColladaLoader} from '../../src/jsm/threejs/ColladaLoader';
+import {FlyControls} from '../../src/jsm/threejs/FlyControls';
+import Stats from '../../src/jsm/threejs/stats.module';
 import {params_setter, getRandomArbitrary, getRandomInt} from '../../src/jsm/utils';
 import {Buffer, BoxSpace} from '../../src/jsm/types';
 
@@ -384,7 +384,8 @@ export class HuntersWorld {
         "items_count": 4000,
         "W": 200,
         "H": 200,
-        "algorithm": null
+        "algorithm": null,
+        "UI": null
       };
 
       this.params_setter(this._default_params, opt);
