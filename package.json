@@ -17,6 +17,7 @@
     "@tensorflow/tfjs-vis": "^1.4.3",
     "babel-node": "^0.0.1-security",
     "chai": "^4.2.0",
+    "dat.gui": "^0.7.7",
     "express": "^4.17.1",
     "jasmine": "^3.6.1",
     "mocha": "^8.1.3",
@@ -63,7 +64,10 @@
     "dist/"
   ],
   "staticFiles": {
-    "staticPath": ["src/models", "src/images"],
+    "staticPath": [
+      "src/models",
+      "src/images"
+    ],
     "watcherGlob": "**"
   },
   "repository": "https://github.com/polyzer/rllib.js.git",

@@ -249,7 +249,6 @@ export function gaussian_log_likelihood(x, mean, log_std){
     return tf.tidy(()=>{
         let divider = log_std.exp().square().add(tf.scalar(1e-9));
         let log_p = x.sub(mean).square().div(divider).add(log_std.mul(tf.scalar(2))).add(tf.scalar(2*Math.PI).log()).mul(tf.scalar(-0.5))
-        //log_p = -0.5 *((x-mean)**2 / (tf.exp(log_std)**2+1e-9) + 2*log_std + np.log(2*np.pi));
         return tf.keep(tf.sum(log_p, -1));    
     });
 }
@@ -297,8 +296,10 @@ export async function PPOContinuous(opt){
         let high_action_space = agents[0].action_space.high
         let act_dim = agents[0].action_space.shape
 
-        let p_logits = (opt.policy_nn) ? opt.policy_nn : build_full_connected(obs_dim, hidden_sizes, act_dim, 'tanh', 'tanh');
-        
+        let p_logits = build_full_connected(obs_dim, hidden_sizes, act_dim, 'tanh', 'tanh');
+        if (opt.policy_nn) { 
+            p_logits = opt.policy_nn; 
+        } 
         let log_std = tf.variable(tf.fill(act_dim, -0.5), false, 'log_std');
         
         let p_noisy = get_p_noisy;
@@ -337,8 +338,8 @@ export async function PPOContinuous(opt){
                     temp_actions.push([act.arraySync()]);
                     let squeezed_val = tf.squeeze(val);
                     temp_values.push([squeezed_val.arraySync()]);
-                    env.n_obs = obs2.slice()
-                    step_count += 1
+                    env.n_obs = obs2.slice();
+                    step_count += 1;
                     if (done){
                         buffer.store(temp_states, temp_rewards, temp_actions, temp_values, 0);
                         temp_states = [];

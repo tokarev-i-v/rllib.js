@@ -1,6 +1,7 @@
 import * as tf from '@tensorflow/tfjs'
 const { PPOContinuous } = require("./PPO")
-
+import {setWeightsToModelByObject}  from '../../src/jsm/utils';
+import {build_full_connected}  from '../../src/jsm/neuralnetworks';
 var agent = {
     observation_space: [],
     action_space: []
@@ -54,8 +55,16 @@ tf.setBackend("cpu").then(()=>{
         agent.observation_space = e.data.observation_space;
         agent.action_space = e.data.action_space;
         env.n_obs = e.data.n_obs;
+        let policy_nn = e.data.policy_nn;
+        let obs_dim = agent.observation_space.shape;
+        let act_dim = agent.action_space.shape
+
+        let model = build_full_connected(obs_dim, [64,64], act_dim, 'tanh', 'tanh');
+        if (policy_nn){
+            model = setWeightsToModelByObject(model, policy_nn);
+        }
         PPOContinuous({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:5e-4, ac_lr:2e-4, gamma:0.99, lam:0.95, steps_per_env:1000, 
-            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:256});
+            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:256, policy_nn: model});
     
     }    
 });
