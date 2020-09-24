@@ -1,7 +1,7 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
 import {build_full_connected}  from '../../src/jsm/neuralnetworks';
-
+import {getWeightsFromModelToWorkerTransfer}  from '../../src/jsm/utils';
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
 });
@@ -281,7 +281,7 @@ export class PPO{
         this.high_action_space = this.agents[0].action_space.high
         this.act_dim = this.agents[0].action_space.shape
 
-        this.policy_nn = build_full_connected(this.obs_dim, this.hidden_sizes, this.act_dim, 'tanh', 'tanh');
+        // this.policy_nn = build_full_connected(this.obs_dim, this.hidden_sizes, this.act_dim, 'tanh', 'tanh');
         if (opt.policy_nn) { 
             this.policy_nn = opt.policy_nn; 
         } 
@@ -293,6 +293,11 @@ export class PPO{
         this.s_values = build_full_connected(this.obs_dim, this.hidden_sizes, [1], 'tanh', null);
         this.p_opt = tf.train.adam(this.ac_lr);
         this.v_opt = tf.train.adam(this.cr_lr);
+    }
+
+    async getPolicyWeights(){
+       let wghts = getWeightsFromModelToWorkerTransfer(this.policy_nn);
+       return wghts;
     }
 
     async train(){
@@ -410,8 +415,6 @@ export class PPO{
 
     }
 
-
-    
     async eval(){
 
     }

@@ -322,7 +322,6 @@ export async function PPOContinuous(opt){
                 let temp_actions = [];
                 let temp_values = [];
                 for(let i=0; i < steps_per_env; i++){
-                    // console.log(i);
                     let nobs = tf.tensor([env.n_obs]);
                     let nobs_e = tf.expandDims(nobs, 0);
                     let p_logits_val = p_logits.apply(nobs);
@@ -365,19 +364,7 @@ export async function PPOContinuous(opt){
                 nobs = tf.expandDims(nobs, 0);
                 let last_v = s_values.apply(nobs);
                 buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v);
-                // for(let i = 0; i < temp_states.length; i++){
-                //     temp_states[i].dispose();
-                // }
-                // for(let i = 0; i < temp_actions.length; i++){
-                //     temp_actions[i].dispose();
-                // }
-                // for(let i = 0; i < temp_values.length; i++){
-                //     temp_states[i].dispose();
-                // }
-
-            }
-            // console.log("on end");
-// CHECKING Stopped HERE!            
+            }          
 
         let [obs_batch, act_batch, adv_batch, rtg_batch] = buffer.get_batch();
         let p_logits_value = p_logits.apply(obs_batch);

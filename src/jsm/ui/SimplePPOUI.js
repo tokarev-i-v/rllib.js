@@ -9,11 +9,13 @@ export class SimpleUI{
             "policy_nn": null,
             "parent": null,
             "download_weights_button_text": "Download agent weights",
-            "set_weights_button_text": "Set Agent"
+            "set_weights_button_text": "Set Agent",
+            "worker": null
         }
         this.params_setter(default_options, opt);
         this.initDownloadWeightsButton();
         this.initSetWeightsButton();
+        
     }
     
     initDownloadWeightsButton(){
@@ -65,6 +67,8 @@ export class SimpleUI{
     }
 
     downloadWeights(){
-        const saveResult = this.policy_nn.save('downloads://mymodel');
+        this.worker.postMessage({
+            msg_type: "get_policy_weights"
+        });
     }
 }
