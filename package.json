@@ -19,6 +19,7 @@
     "chai": "^4.2.0",
     "dat.gui": "^0.7.7",
     "express": "^4.17.1",
+    "hammerjs": "^2.0.8",
     "jasmine": "^3.6.1",
     "mocha": "^8.1.3",
     "puppeteer": "^5.2.1",
@@ -26,9 +27,9 @@
   },
   "scripts": {
     "dqn": "cross-env NODE_ENV=development parcel dqn.html --open --no-hmr --target browser --global window",
-    "ppo": "cross-env NODE_ENV=development parcel ppo_web_worker.html ./agents/policy_gradients/ppo_worker.js --open --no-hmr --target browser --global window",
-    "ppo_class": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
-    "build": "cross-env NODE_ENV=production parcel build dqn.html --target browser --out-dir build --public-url ./",
+    "ppo_old": "cross-env NODE_ENV=development parcel ppo_web_worker.html ./agents/policy_gradients/ppo_worker.js --open --no-hmr --target browser --global window",
+    "ppo": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
+    "build": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --target browser --out-dir build --public-url ./",
     "test": "babel-node --inspect tests.js",
     "lint": "eslint ."
   },

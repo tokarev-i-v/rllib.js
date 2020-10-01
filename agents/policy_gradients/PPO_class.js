@@ -89,26 +89,11 @@ class Buffer{
                 let t_r = tf.tensor(temp_rewards);
                 let t_a = tf.tensor(temp_actions);
                 let t_v = tf.tensor(temp_values);
-                // console.log("store 0", temp_traj[0]);
                 this.ob = tf.keep(this.ob.concat(t_s));
-                // this.ob = tf.keep(this.ob.concat(tens.slice([0], [temp_traj.length,1]).flatten()));
-                // console.log("store 1");
-                // this.ob.print();
                 let rtg = discounted_rewards(t_r.flatten(), last_sv, this.gamma);
-                // console.log("store 2");
                 this.adv = tf.keep(this.adv.concat(GAE(t_r.flatten(), t_v.flatten(), last_sv, this.gamma, this.lam)));
-                // console.log("store 3");
-                // this.adv.print();
-                // console.log(this.adv.shape);
                 this.rtg = tf.keep(this.rtg.concat(rtg));
-                // console.log("store 4");
-                // this.rtg.print();
                 this.ac = tf.keep(this.ac.concat(t_a));    
-                // console.log("store 5");
-                // console.log(this.ob.shape);
-                // console.log(this.adv.shape);
-                // console.log(this.rtg.shape);
-                // console.log(this.ac.shape);
             });
         }
     }
