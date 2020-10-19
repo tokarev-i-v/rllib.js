@@ -1,6 +1,5 @@
-//import * as tf from '@tensorflow/tfjs';
-import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-node-gpu'
+import * as tf from '@tensorflow/tfjs-node'
+
 /**
  * Setting parameters as default config.
  * object's members names will be used for

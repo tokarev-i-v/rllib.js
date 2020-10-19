@@ -1,5 +1,5 @@
-import * as tf from '@tensorflow/tfjs'
-import '@tensorflow/tfjs-node-gpu'
+import * as tf from '@tensorflow/tfjs-node'
+
 export function build_full_connected(input_shape, hiddens_config, output_shape, activation='relu', last_activation='relu'){
     return tf.tidy(()=>{
         if (typeof(input_shape) == "object"){

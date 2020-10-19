@@ -5,8 +5,9 @@
  *  --type: continuous;
  */
 
-import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-node-gpu'
+import * as tf from '@tensorflow/tfjs-node'
+
+// import '@tensorflow/tfjs-node'
 
 // import * as tfvis from '@tensorflow/tfjs-vis'
 import * as THREE from '../../src/jsm/threejs/three.module';
