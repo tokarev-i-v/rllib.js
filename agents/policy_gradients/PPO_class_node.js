@@ -1,7 +1,8 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
-import * as tf from '@tensorflow/tfjs';
-import {build_full_connected}  from '../../src/jsm/neuralnetworks';
-import {getWeightsFromModelToWorkerTransfer}  from '../../src/jsm/utils';
+import * as tf from '@tensorflow/tfjs-node-gpu';
+// import '@tensorflow/tfjs-node-gpu'
+import {build_full_connected}  from '../../src/jsm/neuralnetworks_node';
+import {getWeightsFromModelToWorkerTransfer}  from '../../src/jsm/utils_node';
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
 });

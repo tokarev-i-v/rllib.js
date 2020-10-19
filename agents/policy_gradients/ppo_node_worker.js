@@ -1,8 +1,7 @@
-// import '@tensorflow/tfjs-node'
 import { parentPort, MessagePort, workerData } from 'worker_threads';
-const { PPO } = require("./PPO_class")
-import {setWeightsToModelByObject}  from '../../src/jsm/utils';
-import {build_full_connected}  from '../../src/jsm/neuralnetworks';
+const { PPO } = require("./PPO_class_node")
+import {setWeightsToModelByObject}  from '../../src/jsm/utils_node';
+import {build_full_connected}  from '../../src/jsm/neuralnetworks_node';
 
 var self = this;
 var agent = {
@@ -71,10 +70,9 @@ async function getPolicyWeigts(){
     });
 }
 parentPort.on('message', function(data){
-    console.log(data);
+    // console.log(data);
     if (data.msg_type === "start"){
         start(data);
-        console.log("EEEEE ")
     }
     if (data.msg_type === "step"){
         self.env.e_l = data.e_l;

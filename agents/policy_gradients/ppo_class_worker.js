@@ -1,5 +1,4 @@
-import * as tf from '@tensorflow/tfjs-node'
-// import '@tensorflow/tfjs-node'
+import * as tf from '@tensorflow/tfjs'
 const { PPO } = require("./PPO_class")
 import {setWeightsToModelByObject}  from '../../src/jsm/utils';
 import {build_full_connected}  from '../../src/jsm/neuralnetworks';

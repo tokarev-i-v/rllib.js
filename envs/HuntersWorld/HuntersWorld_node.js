@@ -5,7 +5,7 @@
  *  --type: continuous;
  */
 
-import * as tf from '@tensorflow/tfjs-node'
+import * as tf from '@tensorflow/tfjs-node-gpu'
 
 // import '@tensorflow/tfjs-node'
 
@@ -599,8 +599,10 @@ export class HuntersWorld {
 
     step(action) {
       let ret = this.tick(action);
+      console.log("action:", action);
       this.rew_episode += ret[1];
       this.len_episode += 1;
+      console.log("RET DATA: ", ret);
       return ret;
     }
 
@@ -672,19 +674,17 @@ export class HuntersWorld {
         v.multiplyScalar(a.speed);
         a.position.add(v);
         a.rotation.y += a.rot;
-        
         var res = this.computeCollisions(a.frontEye, true, false);
         if(res) {
           a.position = a.op;
         }
-        
+        console.log(a.position);
         // handle boundary conditions
         if(a.position.x< -this.W/2)a.position.x=-this.W/2;
         if(a.position.x>this.W/2)a.position.x=this.W/2;
         if(a.position.z< -this.H/2)a.position.z=-this.H/2;
         if(a.position.z>this.H/2)a.position.z=this.H/2;
       }
-      
       for(var i=0,n=this.items.length;i<n;i++) {
         var it = this.items[i];
         it.age += 1;
@@ -696,6 +696,7 @@ export class HuntersWorld {
           if(d < it.rad + a.rad) {
             
             var rescheck = this.computeCollisions(a.frontEye, true, false);
+            console.log("rescheck result: ", rescheck);
             if(!rescheck) { 
               if(it.type === 1) a.digestion_signal += it.reward;
               if(it.type === 2) a.digestion_signal += it.reward;

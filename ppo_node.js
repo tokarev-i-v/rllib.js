@@ -1,4 +1,4 @@
-import * as tf from '@tensorflow/tfjs-node'
+import * as tf from '@tensorflow/tfjs-node-gpu'
 
 import {Worker, workerData, MessageChannel} from 'worker_threads';
 import {JSDOM} from 'jsdom';
@@ -27,6 +27,7 @@ function runService(workerData) {
       PPOworker.on('message', function(data){
           if(data.msg_type === "step"){
               var step_data = w.step(data.action);
+              console.log("step data:", step_data);
               PPOworker.postMessage({msg_type: "step", step_data: step_data, n_obs: w.n_obs, e_r: w.get_episode_reward(), e_l: w.get_episode_length()});
               // resolve();
           }
@@ -43,7 +44,6 @@ function runService(workerData) {
           reject(new Error(`Worker stopped with exit code ${code}`));
         }
       });
-      console.log("MAIN CONSOLE LOG");
       PPOworker.postMessage({
         msg_type: "start",
         observation_space: a.observation_space,
