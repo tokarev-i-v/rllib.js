@@ -1,4 +1,4 @@
-import * as tf from '@tensorflow/tfjs'
+import * as tf from "@tensorflow/tfjs";
 import '@tensorflow/tfjs-node-gpu'
 const { PPO } = require("./PPO_class")
 import {setWeightsToModelByObject}  from '../../src/jsm/utils';
@@ -31,15 +31,15 @@ function env_reset(){
 }
 
 
-self.env = env;
+this.env = env;
 function makeStep(){
     // console.log("start of makestep");
     return new Promise(function (resolve, reject) {
-        // console.log("On send action, ", self.env.action);
-        self.resolve = resolve;
-        self.postMessage({
+        // console.log("On send action, ", this.env.action);
+        this.resolve = resolve;
+        this.postMessage({
             msg_type: "step", 
-            action: self.env.action
+            action: this.env.action
         });
     });
 }
@@ -57,32 +57,32 @@ function start(e){
         if (policy_nn){
             model = setWeightsToModelByObject(model, policy_nn);
         }
-        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:5e-4, ac_lr:2e-4, gamma:0.99, lam:0.95, steps_per_env:1000, 
+        this.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:5e-4, ac_lr:2e-4, gamma:0.99, lam:0.95, steps_per_env:1000, 
             number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:256, policy_nn: model});
-        self.ppo_obj.train();
+        this.ppo_obj.train();
 }
 
 async function getPolicyWeigts(){
-    let pw = await self.ppo_obj.getPolicyWeights();
-    self.postMessage({
+    let pw = await this.ppo_obj.getPolicyWeights();
+    this.postMessage({
         msg_type: "get_policy_weights", 
         policy_weights: pw
     });
 }
 
 //at first we get "agent" and "env"
-tf.setBackend("cpu").then(()=>{
-    self.onmessage = function(e){
+// tf.setBackend("cpu").then(()=>{
+    this.onmessage = function(e){
         if (e.data.msg_type === "start"){
             start(e);
         }
         if (e.data.msg_type === "step"){
-            self.env.e_l = e.data.e_l;
-            self.env.e_r = e.data.e_r;
-            self.resolve(e.data.step_data); 
+            this.env.e_l = e.data.e_l;
+            this.env.e_r = e.data.e_r;
+            this.resolve(e.data.step_data); 
         }
         if (e.data.msg_type === "get_policy_weights"){
             getPolicyWeigts();
         }
     }    
-});
+// });
