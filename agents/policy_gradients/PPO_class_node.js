@@ -290,6 +290,8 @@ export class PPO{
 
         let step_count = 0;
         for(let ep=0; ep<this.num_epochs;ep++){
+            console.log("STEP: ", ep);
+
             let buffer = new Buffer_a(this.gamma, this.lam);
             let batch_rew = [];
             let batch_len = [];        

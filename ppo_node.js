@@ -27,7 +27,7 @@ function runService(workerData) {
       PPOworker.on('message', function(data){
           if(data.msg_type === "step"){
               var step_data = w.step(data.action);
-              console.log("step data:", step_data);
+              // console.log("step data:", step_data);
               PPOworker.postMessage({msg_type: "step", step_data: step_data, n_obs: w.n_obs, e_r: w.get_episode_reward(), e_l: w.get_episode_length()});
               // resolve();
           }

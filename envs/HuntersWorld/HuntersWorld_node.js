@@ -176,7 +176,6 @@ export class Agent{
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
     this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
-    // console.log("Observation space shape: ", this.observation_space.shape);
     this.eyes = [];
     let r = 20;
     let alpha = -30;
@@ -265,7 +264,6 @@ export class Agent{
       // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
       // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
     }
-    // console.log("num_eyes: %s ", num_eyes);    
     proximity_reward = proximity_reward/num_eyes;
     
     // agents like to go straight forward
@@ -348,16 +346,11 @@ export class Eye{
     });
     let dst = new THREE.Vector3();
     dst.setFromMatrixPosition( this._view.matrixWorld );
-    // console.log("TARGETS:", targets);
     dst.add(this.a.position.clone().negate());
     dst.normalize();
     this.raycaster.set(this.a.position, dst);
-    console.log("A.position: ", this.a.position);
-    console.log("DST: ", dst);
     let intersects = this.raycaster.intersectObjects(targets);
-    // console.log("INTERSECTS COUNT", intersects);
     if (intersects.length > 0 && intersects[0].distance < this.max_range){
-      // console.log("INTERSECTIONS COUT: ", intersects);
       return {obj: intersects[0].object, type: intersects[0].object._rl.type, dist: intersects[0].distance}
     } else {
       return null;
