@@ -452,7 +452,9 @@ export class HuntersWorld {
     this.Container.id = "MainContainer";
     this.Container.classList.add("Container");
     
-    this.Renderer = new THREE.WebGLRenderer();
+    this.Renderer = new THREE.WebGLRenderer({
+      context: GLOBAL.gl
+    });
     // this.Renderer.setSize(window.innerWidth, window.innerHeight);
     // this.Container.appendChild(this.Renderer.domElement);
 

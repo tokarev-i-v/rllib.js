@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs-node-gpu'
-var gl = require('gl')(1,1); //headless-gl
+GLOBAL.gl = require('gl')(1,1); //headless-gl
 import {Worker, workerData, MessageChannel} from 'worker_threads';
 import {JSDOM} from 'jsdom';
 const jsdel =  new JSDOM(`<!DOCTYPE html><html><head></head><body>hello</body></html>`);
