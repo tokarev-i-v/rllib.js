@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs-node-gpu'
-
+var gl = require('gl')(1,1); //headless-gl
 import {Worker, workerData, MessageChannel} from 'worker_threads';
 import {JSDOM} from 'jsdom';
 const jsdel =  new JSDOM(`<!DOCTYPE html><html><head></head><body>hello</body></html>`);
@@ -8,8 +8,8 @@ global.document = jsdel.window.document;
 // tf.disableDeprecationWarnings();
 
 import {HuntersWorld, Agent as HunterAgent} from "./envs/HuntersWorld/HuntersWorld_node.js";
-import {build_full_connected}  from './src/jsm/neuralnetworks.js';
-import {getWeightsFromModelToWorkerTransfer, setWeightsToModelByObject}  from './src/jsm/utils.js';
+import {build_full_connected}  from './src/jsm/neuralnetworks_node.js';
+import {getWeightsFromModelToWorkerTransfer, setWeightsToModelByObject}  from './src/jsm/utils_node.js';
 let curretWorldClass = HuntersWorld;
 
 function runService(workerData) {

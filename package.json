@@ -20,6 +20,7 @@
     "dat.gui": "^0.7.7",
     "esm": "^3.2.25",
     "express": "^4.17.1",
+    "gl": "^4.8.0",
     "hammerjs": "^2.0.8",
     "jasmine": "^3.6.1",
     "jsdom": "^16.4.0",
@@ -32,6 +33,7 @@
     "dqn": "cross-env NODE_ENV=development parcel dqn.html --open --no-hmr --target browser --global window",
     "ppo_old": "cross-env NODE_ENV=development parcel ppo_web_worker.html ./agents/policy_gradients/ppo_worker.js --open --no-hmr --target browser --global window",
     "ppo": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
+    "ppo_node": "node -r esm ppo_node.js",
     "build": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --target browser --out-dir build --public-url ./",
     "test": "babel-node --inspect tests.js",
     "lint": "eslint ."

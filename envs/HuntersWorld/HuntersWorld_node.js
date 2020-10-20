@@ -176,7 +176,7 @@ export class Agent{
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
     this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
-    console.log("Observation space shape: ", this.observation_space.shape);
+    // console.log("Observation space shape: ", this.observation_space.shape);
     this.eyes = [];
     let r = 20;
     let alpha = -30;
@@ -348,12 +348,16 @@ export class Eye{
     });
     let dst = new THREE.Vector3();
     dst.setFromMatrixPosition( this._view.matrixWorld );
+    // console.log("TARGETS:", targets);
     dst.add(this.a.position.clone().negate());
     dst.normalize();
     this.raycaster.set(this.a.position, dst);
+    console.log("A.position: ", this.a.position);
+    console.log("DST: ", dst);
     let intersects = this.raycaster.intersectObjects(targets);
+    // console.log("INTERSECTS COUNT", intersects);
     if (intersects.length > 0 && intersects[0].distance < this.max_range){
-      console.log("INTERSECTIONS COUT: ", intersects);
+      // console.log("INTERSECTIONS COUT: ", intersects);
       return {obj: intersects[0].object, type: intersects[0].object._rl.type, dist: intersects[0].distance}
     } else {
       return null;
@@ -448,7 +452,7 @@ export class HuntersWorld {
     this.Container.id = "MainContainer";
     this.Container.classList.add("Container");
     
-    // this.Renderer = new THREE.WebGLRenderer();
+    this.Renderer = new THREE.WebGLRenderer();
     // this.Renderer.setSize(window.innerWidth, window.innerHeight);
     // this.Container.appendChild(this.Renderer.domElement);
 
@@ -522,7 +526,7 @@ export class HuntersWorld {
     render () {
       // this.stats.update();
       
-      // this.Renderer.render(this.Scene, this.Camera);
+      this.Renderer.render(this.Scene, this.Camera);
       var delta = this.Clock.getDelta();
       
       // this.Controls.update(delta);
