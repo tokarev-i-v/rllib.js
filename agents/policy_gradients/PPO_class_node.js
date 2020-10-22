@@ -1,5 +1,6 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs-node-gpu';
+import moment from 'moment';
 // import '@tensorflow/tfjs-node-gpu'
 import {build_full_connected}  from '../../src/jsm/neuralnetworks_node';
 import {getWeightsFromModelToWorkerTransfer}  from '../../src/jsm/utils_node';
@@ -279,6 +280,7 @@ export class PPO{
         this.s_values = build_full_connected(this.obs_dim, this.hidden_sizes, [1], 'tanh', null);
         this.p_opt = tf.train.adam(this.ac_lr);
         this.v_opt = tf.train.adam(this.cr_lr);
+        this.lastTime = moment();
     }
 
     async getPolicyWeights(){
@@ -290,8 +292,11 @@ export class PPO{
 
         let step_count = 0;
         for(let ep=0; ep<this.num_epochs;ep++){
-            console.log("STEP: ", ep);
-
+            console.log("STEP number: ", ep);
+            let curTime = moment();
+            let timeDifference = curTime.diff(this.lastTime, 'seconds');
+            this.lastTime = curTime;
+            console.log("STEP train time: ", timeDifference);
             let buffer = new Buffer_a(this.gamma, this.lam);
             let batch_rew = [];
             let batch_len = [];        

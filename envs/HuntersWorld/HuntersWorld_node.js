@@ -412,6 +412,8 @@ export class HuntersWorld {
         this.Scene.add(agent.view);
         this.agents.push(agent);        
       }
+      
+      this.Renderer.render(this.Scene, this.Camera);
       this.render();
     }   
     /**
@@ -474,7 +476,6 @@ export class HuntersWorld {
 
     
     this.Clock = new THREE.Clock();
-
   }
     onWindowResize() {
       this.Camera.aspect = window.innerWidth / window.innerHeight;
@@ -521,13 +522,14 @@ export class HuntersWorld {
     render () {
       // this.stats.update();
       
-      this.Renderer.render(this.Scene, this.Camera);
+      // this.Renderer.render(this.Scene, this.Camera);
       var delta = this.Clock.getDelta();
       
       // this.Controls.update(delta);
       for (let el of this.bullets){
         el.update(delta);
         let it = this.controlBulletCollision(el, this.items);
+        // let it = 0;
         if(it){
           if(it.type === 1) this.agents[0].digestion_signal += it.reward;
           if(it.type === 2) this.agents[0].digestion_signal += it.reward;
