@@ -204,8 +204,9 @@ export class Agent{
     this.speed = 0.0;
     this.average_reward_window = new Buffer(10, 1000);
     this.displayHistoryData = [];
+
     // this.surface = { name: 'Mean reward', tab: 'Charts' };
-    setInterval(this.graphic_vis.bind(this), 1000);
+    // setInterval(this.graphic_vis.bind(this), 1000);
   }
   
   fire(){
@@ -230,6 +231,7 @@ export class Agent{
       this.displayHistoryData.splice(0,100);
     }
     this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
+    console.log("Mean reward: ", this.average_reward_window.get_average());
     // let data = {values: this.displayHistoryData};
     // tfvis.render.linechart(this.surface, data);
   }
@@ -522,7 +524,7 @@ export class HuntersWorld {
     render () {
       // this.stats.update();
       
-      // this.Renderer.render(this.Scene, this.Camera);
+      this.Renderer.render(this.Scene, this.Camera);
       var delta = this.Clock.getDelta();
       
       // this.Controls.update(delta);
@@ -702,6 +704,7 @@ export class HuntersWorld {
         done = true;
         ret_data[2] = done;
         this.need_reset_env = 1;
+        this.agents[0].graphic_vis();
       }
       this.render();
       return ret_data; 

@@ -1,5 +1,7 @@
 import * as tf from '@tensorflow/tfjs-node-gpu'
 GLOBAL.gl = require('gl')(1,1); //headless-gl
+import moment from 'moment';
+import fs from 'fs'
 import {Worker, workerData, MessageChannel} from 'worker_threads';
 import {JSDOM} from 'jsdom';
 const jsdel =  new JSDOM(`<!DOCTYPE html><html><head></head><body>hello</body></html>`);
@@ -32,9 +34,14 @@ function runService(workerData) {
               // resolve();
           }
           if(data.msg_type === "get_policy_weights"){
+              let curr_time_str = moment().format();
+              let dir = "./PPO/" + curr_time_str + "/";
+              if (!fs.existsSync(dir)){
+                fs.mkdirSync(dir);
+              }
               let model = build_full_connected(a.observation_space.shape, [64,64], a.action_space.shape, 'tanh', 'tanh');
               model = setWeightsToModelByObject(model, data.policy_weights);
-              model.save('downloads://mymodel');
+              model.save('file://' + dir + 'model');
           }
       });
 
@@ -49,7 +56,8 @@ function runService(workerData) {
         observation_space: a.observation_space,
         action_space: a.action_space,
         n_obs: w.n_obs,
-        policy_nn: weights_obj
+        policy_nn: weights_obj,
+        num_epochs: 60
       });
       
     })

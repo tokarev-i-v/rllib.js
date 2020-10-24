@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs-node-gpu';
 import moment from 'moment';
 // import '@tensorflow/tfjs-node-gpu'
 import {build_full_connected}  from '../../src/jsm/neuralnetworks_node';
-import {getWeightsFromModelToWorkerTransfer}  from '../../src/jsm/utils_node';
+import {getWeightsFromModelToWorkerTransfer, createCheckpoint}  from '../../src/jsm/utils_node';
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
 });
@@ -402,7 +402,7 @@ export class PPO{
         act_batch.dispose();
         adv_batch.dispose();
         rtg_batch.dispose();
-
+        createCheckpoint(this.policy_nn, "./models/PPO/", ep);
         }
 
 

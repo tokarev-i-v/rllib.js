@@ -1,5 +1,6 @@
 import * as tf from '@tensorflow/tfjs-node-gpu'
-
+import moment from 'moment';
+import fs from 'fs'
 /**
  * Setting parameters as default config.
  * object's members names will be used for
@@ -82,4 +83,16 @@ export function setWeightsToModelByObject(model, weights_obj){
         }
     }
     return model;
+}
+
+export function createCheckpoint(model, parent_path, checkpoint_number){
+    //get current time
+    let curr_time_str = moment().format("DD-MM-YYYY_hh-mm-ss");
+    let dir = parent_path + curr_time_str + "/";
+    if (!fs.existsSync(dir)){
+      fs.mkdirSync(dir, {recursive: true});
+    }
+    // let model = build_full_connected(a.observation_space.shape, [64,64], a.action_space.shape, 'tanh', 'tanh');
+    // model = setWeightsToModelByObject(model, data.policy_weights);
+    model.save('file://' + dir + 'model_' + checkpoint_number);
 }
