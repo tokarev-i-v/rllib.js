@@ -32,6 +32,7 @@
   },
   "scripts": {
     "dqn": "cross-env NODE_ENV=development parcel dqn.html --open --no-hmr --target browser --global window",
+    "vr_env": "cross-env NODE_ENV=development parcel vr-env.html --open --no-hmr --target browser --global window",
     "ppo_old": "cross-env NODE_ENV=development parcel ppo_web_worker.html ./agents/policy_gradients/ppo_worker.js --open --no-hmr --target browser --global window",
     "ppo": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
     "ppo_node": "node -r esm ppo_node.js",
