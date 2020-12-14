@@ -4,15 +4,14 @@ tf.disableDeprecationWarnings();
 import {FlatAreaEatWorld_c, Agent as FlatAgent} from "./envs/FlatAreaWorld/FlatAreaEatWorld_c"
 import {TestWorld_c, Agent as TestAgent} from "./envs/TestWorld/TestWorld_c"
 import {HuntersWorld, Agent as HunterAgent} from "./envs/HuntersWorld/HuntersWorld"
-import {HuntersWorld as HuntersWorld3D, Agent as HunterAgent3D} from "./envs/World3D/HuntersWorld3D"
-import {build_full_connected}  from './src/jsm/neuralnetworks';
+import {build_full_connected, build_cnn_full}  from './src/jsm/neuralnetworks';
 import {getWeightsFromModelToWorkerTransfer, setWeightsToModelByObject}  from './src/jsm/utils';
 import {SimpleUI} from './src/jsm/ui/SimplePPOUI'
-let curretWorldClass = HuntersWorld3D;
+let curretWorldClass = HuntersWorld;
 
 var PPOworker = new Worker("agents/policy_gradients/ppo_class_worker.js");
 
-var a = new HunterAgent3D({eyes_count: 10});
+var a = new HunterAgent({eyes_count: 10});
 let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.action_space.shape, 'tanh', 'tanh');
 let weights_obj = getWeightsFromModelToWorkerTransfer(cur_nn);
 let ui = new SimpleUI({parent: document.body, policy_nn: cur_nn, worker: PPOworker});

@@ -33,8 +33,8 @@
   "scripts": {
     "dqn": "cross-env NODE_ENV=development parcel dqn.html --open --no-hmr --target browser --global window",
     "vr_env": "cross-env NODE_ENV=development parcel vr-env.html --open --no-hmr --target browser --global window",
-    "ppo_old": "cross-env NODE_ENV=development parcel ppo_web_worker.html ./agents/policy_gradients/ppo_worker.js --open --no-hmr --target browser --global window",
     "ppo": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
+    "ppo_dense": "cross-env NODE_ENV=development parcel examples/ppo_dense_hunter_world_3d.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
     "ppo_node": "node -r esm ppo_node.js",
     "build": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --target browser --out-dir build --public-url ./",
     "test": "babel-node --inspect tests.js",

@@ -183,14 +183,14 @@ export default class DQN{
         return ret;
       }
 
-      async forward(input_array) {
+      async forward(obs) {
         this.forward_passes += 1;
-        this.last_input_array = input_array; // back this up
+        this.last_obs = obs; // back this up
         
         // create network input
         var action;
         if(this.forward_passes > this.temporal_window) {
-          var net_input = this.getNetInput(input_array);
+          var net_input = this.getNetInput(algo_obj);
           if(this.learning) {
             this.epsilon = Math.min(1.0, Math.max(this.epsilon_min, 1.0-(this.age - this.learning_steps_burnin)/(this.learning_steps_total - this.learning_steps_burnin))); 
           } else {
