@@ -696,6 +696,9 @@ export class HuntersWorld {
         if(a.position.x>this.W/2)a.position.x=this.W/2;
         if(a.position.z< -this.H/2)a.position.z=-this.H/2;
         if(a.position.z>this.H/2)a.position.z=this.H/2;
+        if(a.position.y< -this.D/2)a.position.z=-this.D/2;
+        if(a.position.y>this.D/2)a.position.z=this.D/2;
+
       }
       
       for(var i=0,n=this.items.length;i<n;i++) {
