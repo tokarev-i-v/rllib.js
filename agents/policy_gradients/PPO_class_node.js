@@ -268,10 +268,14 @@ export class PPO{
         this.high_action_space = this.agents[0].action_space.high
         this.act_dim = this.agents[0].action_space.shape
 
-        // this.policy_nn = build_full_connected(this.obs_dim, this.hidden_sizes, this.act_dim, 'tanh', 'tanh');
+        /**
+         * If specified policy nn than we use it.
+         */
         if (opt.policy_nn) { 
             this.policy_nn = opt.policy_nn; 
-        } 
+        } else {
+            this.policy_nn = build_full_connected(this.obs_dim, this.hidden_sizes, this.act_dim, 'tanh', 'tanh');
+        }
         this.log_std = tf.variable(tf.fill(this.act_dim, -0.5), false, 'log_std');
         
         this.p_noisy = get_p_noisy;

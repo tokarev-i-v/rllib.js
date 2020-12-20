@@ -142,14 +142,15 @@ export class Agent{
     console.log("Observation space shape: ", this.observation_space.shape);
     this.eyes = [];
     let r = 20;
-    let alpha = -30;
+    let dalpha = 10;
+    let alpha = -(dalpha*this.eyes_count)/2;
     /**Now we create agent's eyes*/
     for (let i = 0; i < this.eyes_count; i++){
         let eye = new Eye(this, alpha, r);
         let mesh = eye.view;
         this.view.add(mesh);
         this.eyes.push(eye);
-        alpha += 10;
+        alpha += dalpha;
     }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
