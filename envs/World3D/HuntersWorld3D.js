@@ -258,6 +258,7 @@ export class Agent{
   get_reward() {
     // compute reward 
     var proximity_reward = 0.0;
+    var timed_reward = -1.0;
     var num_eyes = this.eyes.length;
     for(var i=0;i<num_eyes;i++) {
       var e = this.eyes[i];
@@ -276,7 +277,7 @@ export class Agent{
     // agents like to eat good things
     var digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
-    var reward = proximity_reward + forward_reward + digestion_reward;   
+    var reward = proximity_reward + forward_reward + digestion_reward + timed_reward;   
     this.average_reward_window.add(reward);
     return reward;
   }
@@ -337,6 +338,7 @@ export class Eye{
       geometry,
       material
     );
+    this.end_position = new THREE.Vector3(Math.sin(Math.PI*alpha/180)*r,Math.cos(Math.PI*alpha/180)*r,  Math.PI/2);
     /**setting Eye position and rotation */
     this._view.geometry.computeBoundingBox();
     this.raycaster = new THREE.Raycaster();
@@ -356,9 +358,9 @@ export class Eye{
     let targets = targets_objs.map((el)=>{
         return el.view;
     });
-    let dst = new THREE.Vector3();
-    dst.setFromMatrixPosition( this._view.matrixWorld );
-    dst.add(this.a.position.clone().negate());
+    let dst = this.a.position.clone();
+    // dst.setFromMatrixPosition( this._view.matrixWorld );
+    dst.add(this.end_position.clone());
     dst.normalize();
     this.raycaster.set(this.a.position, dst);
     let intersects = this.raycaster.intersectObjects(targets);
