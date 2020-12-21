@@ -56,8 +56,8 @@ function start(e){
         if (policy_nn){
             model = setWeightsToModelByObject(model, policy_nn);
         }
-        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:5e-4, ac_lr:2e-4, gamma:0.99, lam:0.95, steps_per_env:1000, 
-            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:256, policy_nn: model});
+        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:5e-4, ac_lr:2e-4, gamma:0.99, lam:0.95, steps_per_env:128, 
+            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:32, policy_nn: model});
         self.ppo_obj.train();
 }
 

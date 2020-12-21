@@ -44,7 +44,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 0.99;
+    this.reward = 2.0;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -264,8 +264,8 @@ export class Agent{
       var e = this.eyes[i];
       // Here could be
       // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
-      // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
-      // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
+      proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
+      proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
     }
     // console.log("num_eyes: %s ", num_eyes);    
     proximity_reward = proximity_reward/num_eyes;
@@ -745,7 +745,7 @@ export class HuntersWorld {
       let info = {};
       
       let ret_data = [state, reward, done, info];
-      if(this.clock % 1000 == 0){
+      if(this.clock % 100 == 0){
         done = true;
         ret_data[2] = done;
         this.need_reset_env = 1;

@@ -42,6 +42,7 @@ export const discounted_rewards = (rews, last_sv, gamma) => tf.tidy(()=>{
     }
     let rtg = rews.bufferSync();
     rtg.set(rtg.get(rews.shape[0]-1) + gamma * last_sv, rews.shape[0]-1);
+    // rtg.set(rtg.get(rews.shape[0]-1) + gamma * last_sv.arraySync()[0][0][0], rews.shape[0]-1);
     for(let i = rews.shape[0]-2;i >= 0; i--){
         rtg.set(rtg.get(i) + gamma * rtg.get(i+1), i);
     }
@@ -100,6 +101,7 @@ class Buffer{
     get_batch(){
         return tf.tidy(()=> {
             let norm_adv = tf.keep(this.adv.sub(this.adv.mean()).div(tf.moments(this.adv).variance.sqrt().add(tf.scalar(1e-10))));
+            norm_adv;
             return [tf.keep(this.ob), tf.keep(this.ac), norm_adv, tf.keep(this.rtg)];    
         });
     }
@@ -127,7 +129,9 @@ export class Buffer_a{
         if (temp_states.length > 0){
             tf.tidy(()=>{
                 let t_s = tf.tensor(temp_states);
-                let t_r = tf.tensor(temp_rewards);
+                let t_r1 = tf.tensor(temp_rewards);
+                let t_r2 = tf.tensor(temp_rewards);
+                // t_r = tf.tensor(temp_rewards);
                 let t_a = tf.tensor(temp_actions);
                 let t_v = tf.tensor(temp_values);
                 // console.log("store 0", temp_traj[0]);
@@ -135,9 +139,9 @@ export class Buffer_a{
                 // this.ob = tf.keep(this.ob.concat(tens.slice([0], [temp_traj.length,1]).flatten()));
                 // console.log("store 1");
                 // this.ob.print();
-                let rtg = discounted_rewards(t_r.flatten(), last_sv, this.gamma);
+                let rtg = discounted_rewards(t_r1.flatten(), last_sv, this.gamma);
                 // console.log("store 2");
-                this.adv = this.adv.concat(GAE(t_r.flatten(), t_v.flatten(), last_sv, this.gamma, this.lam).arraySync());
+                this.adv = this.adv.concat(GAE(t_r2.flatten(), t_v.flatten(), last_sv, this.gamma, this.lam).arraySync());
                 // console.log("store 3");
                 // this.adv.print();
                 // console.log(this.adv.shape);
@@ -340,7 +344,7 @@ export class PPO{
                 let nobs = tf.tensor([env.n_obs]);
                 nobs = tf.expandDims(nobs, 0);
                 let last_v = this.s_values.apply(nobs);
-                buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v);
+                buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v.arraySync()[0][0][0]);
             }        
 
         let [obs_batch, act_batch, adv_batch, rtg_batch] = buffer.get_batch();
