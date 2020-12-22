@@ -186,6 +186,7 @@ export class Agent{
         let eye = new Eye(this, alpha, r);
         let mesh = eye.view;
         this.view.add(mesh);
+        this.view.add(eye.sphere_point);
         this.eyes.push(eye);
         alpha += dalpha;
     }
@@ -264,8 +265,8 @@ export class Agent{
       var e = this.eyes[i];
       // Here could be
       // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
-      proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
-      proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
+      // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
+      // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
     }
     // console.log("num_eyes: %s ", num_eyes);    
     proximity_reward = proximity_reward/num_eyes;
@@ -338,6 +339,12 @@ export class Eye{
       geometry,
       material
     );
+    this.sphere_point = new THREE.Mesh(
+      new THREE.SphereBufferGeometry(0.1, 10, 10),
+      new THREE.MeshBasicMaterial({color:0x000000})
+    )
+    this.sphere_point.geometry.computeBoundingBox();
+    this.sphere_point.position.set(Math.sin(Math.PI*alpha/180)*r,Math.cos(Math.PI*alpha/180)*r,  Math.PI/2);
     this.end_position = new THREE.Vector3(Math.sin(Math.PI*alpha/180)*r,Math.cos(Math.PI*alpha/180)*r,  Math.PI/2);
     /**setting Eye position and rotation */
     this._view.geometry.computeBoundingBox();
@@ -358,13 +365,15 @@ export class Eye{
     let targets = targets_objs.map((el)=>{
         return el.view;
     });
-    let dst = this.a.position.clone();
+    let dst = new THREE.Vector3();
+    dst.setFromMatrixPosition( this.sphere_point.matrixWorld );
     // dst.setFromMatrixPosition( this._view.matrixWorld );
-    dst.add(this.end_position.clone());
+    dst.sub(this.a.position.clone());
     dst.normalize();
     this.raycaster.set(this.a.position, dst);
     let intersects = this.raycaster.intersectObjects(targets);
     if (intersects.length > 0 && intersects[0].distance < this.max_range){
+      intersects[0].object.material.color.setHex( 0x0000ff );
       return {obj: intersects[0].object, type: intersects[0].object._rl.type, dist: intersects[0].distance}
     } else {
       return null;
@@ -578,7 +587,7 @@ export class HuntersWorld {
           this.removeBullet(el);
         }else if (el.way.length() > 20){
           this.removeBullet(el);
-          this.agents[0].digestion_signal += -0.99;
+          this.agents[0].digestion_signal += -2.00;
         }
       }
     }
