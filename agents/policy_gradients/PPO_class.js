@@ -42,12 +42,12 @@ export const discounted_rewards = (rews, last_sv, gamma) => tf.tidy(()=>{
     }
     let rtg = rews.bufferSync();
     rtg.set(rtg.get(rews.shape[0]-1) + gamma * last_sv, rews.shape[0]-1);
-    // rtg.set(rtg.get(rews.shape[0]-1) + gamma * last_sv.arraySync()[0][0][0], rews.shape[0]-1);
     for(let i = rews.shape[0]-2;i >= 0; i--){
         rtg.set(rtg.get(i) + gamma * rtg.get(i+1), i);
     }
 
     let ret_value = tf.keep(rtg.toTensor());
+    // ret_value.reverse();
     return ret_value;
 });
 /**
@@ -64,7 +64,7 @@ export const GAE = (rews, v, v_last, gamma=0.99, lam=0.95) => tf.tidy(()=>{
     gamma = tf.scalar(gamma);
     let delta = rews.add(vs.slice([1], [vs.shape[0]-1]).mul(gamma)).sub(vs.slice([0], [vs.shape[0]-1]));
 
-    let gae_advantage = discounted_rewards(delta, 0, gamma.dataSync()*lam)
+    let gae_advantage = discounted_rewards(delta, 0, gamma.dataSync()*lam);
 
     return gae_advantage;
 });
@@ -131,29 +131,13 @@ export class Buffer_a{
                 let t_s = tf.tensor(temp_states);
                 let t_r1 = tf.tensor(temp_rewards);
                 let t_r2 = tf.tensor(temp_rewards);
-                // t_r = tf.tensor(temp_rewards);
                 let t_a = tf.tensor(temp_actions);
                 let t_v = tf.tensor(temp_values);
-                // console.log("store 0", temp_traj[0]);
                 this.ob = this.ob.concat(t_s.arraySync());
-                // this.ob = tf.keep(this.ob.concat(tens.slice([0], [temp_traj.length,1]).flatten()));
-                // console.log("store 1");
-                // this.ob.print();
                 let rtg = discounted_rewards(t_r1.flatten(), last_sv, this.gamma);
-                // console.log("store 2");
                 this.adv = this.adv.concat(GAE(t_r2.flatten(), t_v.flatten(), last_sv, this.gamma, this.lam).arraySync());
-                // console.log("store 3");
-                // this.adv.print();
-                // console.log(this.adv.shape);
                 this.rtg = this.rtg.concat(rtg.arraySync());
-                // console.log("store 4");
-                // this.rtg.print();
                 this.ac = this.ac.concat(t_a.arraySync());    
-                // console.log("store 5");
-                // console.log(this.ob.shape);
-                // console.log(this.adv.shape);
-                // console.log(this.rtg.shape);
-                // console.log(this.ac.shape);
             });
         }
     }
@@ -270,7 +254,6 @@ export class PPO{
         this.high_action_space = this.agents[0].action_space.high
         this.act_dim = this.agents[0].action_space.shape
 
-        // this.policy_nn = build_full_connected(this.obs_dim, this.hidden_sizes, this.act_dim, 'tanh', 'tanh');
         if (opt.policy_nn) { 
             this.policy_nn = opt.policy_nn; 
         } 

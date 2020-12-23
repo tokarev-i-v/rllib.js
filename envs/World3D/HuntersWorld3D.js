@@ -175,7 +175,10 @@ export class Agent{
     this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
-    this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
+    /**
+     * observation = data from detectors + world direction of agent
+     */
+    this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3 + 3])
     console.log("Observation space shape: ", this.observation_space.shape);
     this.eyes = [];
     let r = 20;
@@ -253,6 +256,9 @@ export class Agent{
         obs[i*3 + e.sensed_type] = e.sensed_proximity/e.max_range; // normalize to [0,1]
       }
     }
+    let wdir = new THREE.Vector3();
+    this.view.getWorldDirection(wdir);
+    obs = obs.concat([wdir.x, wdir.y, wdir.z]);
     return obs;
   }
 
@@ -367,7 +373,6 @@ export class Eye{
     });
     let dst = new THREE.Vector3();
     dst.setFromMatrixPosition( this.sphere_point.matrixWorld );
-    // dst.setFromMatrixPosition( this._view.matrixWorld );
     dst.sub(this.a.position.clone());
     dst.normalize();
     this.raycaster.set(this.a.position, dst);
