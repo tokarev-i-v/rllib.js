@@ -272,6 +272,15 @@ export class PPO{
        return wghts;
     }
 
+    async getValueWeights(){
+        let wghts = getWeightsFromModelToWorkerTransfer(this.s_values);
+        return wghts;
+     }
+
+    async setPolicyModel(policy_nn){
+        this.policy_nn = policy_nn;
+     }    
+
     async train(){
 
         let step_count = 0;

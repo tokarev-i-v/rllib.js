@@ -1,6 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
-import {params_setter} from '../utils';
-
+import {getWeightsFromModelToWorkerTransfer, params_setter}  from '../utils';
 export class SimpleUI{
     constructor(opt){
         this.params_setter = params_setter.bind(this);
@@ -15,6 +14,7 @@ export class SimpleUI{
         this.params_setter(default_options, opt);
         this.initDownloadWeightsButton();
         this.initSetWeightsButton();
+        this.initWeightsPathInput();
         
     }
     
@@ -26,7 +26,7 @@ export class SimpleUI{
             this.downloadWeightsButton.style.top = "50px";
             this.downloadWeightsButton.style.width = "100px";
             this.downloadWeightsButton.style.height = "40px";            
-            this.downloadWeightsButton.id = "ppo_ui";
+            this.downloadWeightsButton.id = "ppo_ui_download_weights";
             this.downloadWeightsButton.style.zIndex = 10;
             this.downloadWeightsButton.style.position = 'absolute';
             this.downloadWeightsButton.textContent = this.download_weights_button_text;
@@ -45,10 +45,10 @@ export class SimpleUI{
             this.setWeightsButton = document.createElement("Button");
             this.setWeightsButton.addEventListener("click", this.setWeights.bind(this));
             this.setWeightsButton.style.left = "0px";
-            this.setWeightsButton.style.top = "100px";
+            this.setWeightsButton.style.top = "150px";
             this.setWeightsButton.style.width = "100px";
             this.setWeightsButton.style.height = "40px";            
-            this.setWeightsButton.id = "ppo_ui";
+            this.setWeightsButton.id = "ppo_ui_set_weights_button";
             this.setWeightsButton.style.zIndex = 10;
             this.setWeightsButton.style.position = 'absolute';
             this.setWeightsButton.textContent = this.set_weights_button_text;
@@ -62,8 +62,33 @@ export class SimpleUI{
         }
     }
 
+    initWeightsPathInput(){
+        if(document){
+            this.setWeightsButton = document.createElement("input");
+            this.setWeightsButton.type = "text";
+            this.setWeightsButton.style.left = "0px";
+            this.setWeightsButton.style.top = "100px";          
+            this.setWeightsButton.id = "ppo_ui_set_weight_input";
+            this.setWeightsButton.style.zIndex = 10;
+            this.setWeightsButton.style.position = 'absolute';
+
+            if(this.parent){
+                this.parent.appendChild(this.setWeightsButton);
+            } else {
+                document.body.appendChild(this.setWeightsButton);
+                this.parent = document.body;
+            }
+        }
+    }
+
     setWeights(){
-        this.policy_nn = tf.loadLayersModel('http://localhost:1234/models/mymodel.json');    
+        let pth = 'http://localhost:1234/' + this.setWeightsButton.value;
+        this.policy_nn = tf.loadLayersModel(pth);    
+        this.worker.postMessage({
+            msg_type: "set_policy_weights",
+            // policy_nn: getWeightsFromModelToWorkerTransfer(this.policy_nn),
+            weights_path: pth
+        });
     }
 
     downloadWeights(){

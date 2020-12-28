@@ -50,12 +50,8 @@ export function getWeightsFromModelToWorkerTransfer(model){
     let ret = {};
     if(model){
         for(let layer in model.layers){
-            // ret[layer] = [];
             ret[layer] = {};
             for(let wg of model.layers[layer].getWeights()){
-                let obj_to_add = {};
-                // obj_to_add[wg.name] = wg.arraySync();
-                // ret[layer].push(obj_to_add);
                 ret[layer][wg.name] = wg.arraySync();
 
             }    

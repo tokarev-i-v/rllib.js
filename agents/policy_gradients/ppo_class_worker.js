@@ -63,9 +63,27 @@ function start(e){
 
 async function getPolicyWeigts(){
     let pw = await self.ppo_obj.getPolicyWeights();
+    let vw = await self.ppo_obj.getValueWeights();
     self.postMessage({
-        msg_type: "get_policy_weights", 
+        msg_type: "get_policy_weights_answer", 
+        policy_weights: pw,
+        value_weights: vw
+    });
+}
+
+async function setPolicyWeigts(policy_nn){
+    let pw = await self.ppo_obj.setPolicyWeights(policy_nn);
+    self.postMessage({
+        msg_type: "set_policy_weights_answer", 
         policy_weights: pw
+    });
+}
+
+async function loadModelByPath(weights_path){
+    let policy_nn = await tf.loadLayersModel(weights_path);
+    let pw = await self.ppo_obj.setPolicyModel(policy_nn);
+    self.postMessage({
+        msg_type: "set_policy_weights_answer"
     });
 }
 
@@ -83,5 +101,14 @@ tf.setBackend("cpu").then(()=>{
         if (e.data.msg_type === "get_policy_weights"){
             getPolicyWeigts();
         }
+        if (e.data.msg_type === "set_policy_weights"){
+            // let policy_nn = e.data.policy_nn;
+            // let model = build_full_connected(agent.observation_space.shape, [64,64], agent.action_space.shape, 'tanh', 'tanh');
+            // if (policy_nn){
+            //     model = setWeightsToModelByObject(model, policy_nn);
+            // }
+            // let model = tf.loadLayersModel(e.data.weights_path);    
+            loadModelByPath(e.data.weights_path);
+        }        
     }    
 });

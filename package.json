@@ -75,7 +75,8 @@
   "staticFiles": {
     "staticPath": [
       "src/models",
-      "src/images"
+      "src/images",
+      "models"
     ],
     "watcherGlob": "**"
   },
