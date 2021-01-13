@@ -282,7 +282,6 @@ export class PPO{
      }    
 
     async train(){
-
         let step_count = 0;
         for(let ep=0; ep<this.num_epochs;ep++){
             let buffer = new Buffer_a(this.gamma, this.lam);

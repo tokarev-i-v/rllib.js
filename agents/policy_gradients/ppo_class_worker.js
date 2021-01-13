@@ -1,3 +1,6 @@
+/**
+ * Middleware for processing queryes from main process to PPO algorithm.
+ */
 import * as tf from '@tensorflow/tfjs'
 const { PPO } = require("./PPO_class")
 import {setWeightsToModelByObject}  from '../../src/jsm/utils';
@@ -71,19 +74,19 @@ async function getPolicyWeigts(){
     });
 }
 
-async function setPolicyWeigts(policy_nn){
-    let pw = await self.ppo_obj.setPolicyWeights(policy_nn);
+async function loadPolicyModelByPath(weights_path){
+    let nn = await tf.loadLayersModel(weights_path);
+    let pw = await self.ppo_obj.setPolicyModel(nn);
     self.postMessage({
-        msg_type: "set_policy_weights_answer", 
-        policy_weights: pw
+        msg_type: "set_policy_weights_answer"
     });
 }
 
-async function loadModelByPath(weights_path){
-    let policy_nn = await tf.loadLayersModel(weights_path);
-    let pw = await self.ppo_obj.setPolicyModel(policy_nn);
+async function loadValueModelByPath(weights_path){
+    let nn = await tf.loadLayersModel(weights_path);
+    let pw = await self.ppo_obj.setValueModel(nn);
     self.postMessage({
-        msg_type: "set_policy_weights_answer"
+        msg_type: "set_value_weights_answer"
     });
 }
 
@@ -101,14 +104,13 @@ tf.setBackend("cpu").then(()=>{
         if (e.data.msg_type === "get_policy_weights"){
             getPolicyWeigts();
         }
-        if (e.data.msg_type === "set_policy_weights"){
-            // let policy_nn = e.data.policy_nn;
-            // let model = build_full_connected(agent.observation_space.shape, [64,64], agent.action_space.shape, 'tanh', 'tanh');
-            // if (policy_nn){
-            //     model = setWeightsToModelByObject(model, policy_nn);
-            // }
-            // let model = tf.loadLayersModel(e.data.weights_path);    
-            loadModelByPath(e.data.weights_path);
+        if (e.data.msg_type === "set_policy_weights"){  
+            if (e.data.policy_weights){
+                loadPolicyModelByPath(e.data.policy_weights_path)
+            }
+            if (e.data.value_weights){
+                loadValueModelByPath(e.data.value_weights_path)
+            }
         }        
     }    
 });

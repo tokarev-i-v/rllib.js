@@ -14,7 +14,8 @@ export class SimpleUI{
         this.params_setter(default_options, opt);
         this.initDownloadWeightsButton();
         this.initSetWeightsButton();
-        this.initWeightsPathInput();
+        this.initPolicyWeightsPathInput();
+        this.initValueWeightsPathInput();
         
     }
     
@@ -62,13 +63,13 @@ export class SimpleUI{
         }
     }
 
-    initWeightsPathInput(){
+    initPolicyWeightsPathInput(){
         if(document){
             this.setWeightsButton = document.createElement("input");
             this.setWeightsButton.type = "text";
             this.setWeightsButton.style.left = "0px";
             this.setWeightsButton.style.top = "100px";          
-            this.setWeightsButton.id = "ppo_ui_set_weight_input";
+            this.setWeightsButton.id = "ppo_ui_set_policy_weight_input";
             this.setWeightsButton.style.zIndex = 10;
             this.setWeightsButton.style.position = 'absolute';
 
@@ -80,6 +81,26 @@ export class SimpleUI{
             }
         }
     }
+
+    initValueWeightsPathInput(){
+        if(document){
+            this.setWeightsButton = document.createElement("input");
+            this.setWeightsButton.type = "text";
+            this.setWeightsButton.style.left = "0px";
+            this.setWeightsButton.style.top = "130px";          
+            this.setWeightsButton.id = "ppo_ui_set_value_weight_input";
+            this.setWeightsButton.style.zIndex = 10;
+            this.setWeightsButton.style.position = 'absolute';
+
+            if(this.parent){
+                this.parent.appendChild(this.setWeightsButton);
+            } else {
+                document.body.appendChild(this.setWeightsButton);
+                this.parent = document.body;
+            }
+        }
+    }
+
 
     setWeights(){
         let pth = 'http://localhost:1234/' + this.setWeightsButton.value;

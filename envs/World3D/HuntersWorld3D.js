@@ -378,7 +378,7 @@ export class Eye{
     this.raycaster.set(this.a.position, dst);
     let intersects = this.raycaster.intersectObjects(targets);
     if (intersects.length > 0 && intersects[0].distance < this.max_range){
-      intersects[0].object.material.color.setHex( 0x0000ff );
+      // intersects[0].object.material.color.setHex( 0x0000ff );
       return {obj: intersects[0].object, type: intersects[0].object._rl.type, dist: intersects[0].distance}
     } else {
       return null;

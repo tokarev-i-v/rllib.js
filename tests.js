@@ -1,3 +1,7 @@
+/**
+ * Testing PPO algorithm executor.
+ */
+
 var Jasmine = require('jasmine');
 var jasmine = new Jasmine();
 

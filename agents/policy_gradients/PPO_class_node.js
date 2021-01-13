@@ -52,6 +52,8 @@ export const discounted_rewards = (rews, last_sv, gamma) => tf.tidy(()=>{
     return ret_value;
 });
 /**
+ * Generalized Advantage Estimation
+ * 
  * PASSED
  * @param {tf.Tensor} rews 
  * @param {tf.Tensor} v 

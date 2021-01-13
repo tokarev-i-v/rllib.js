@@ -1,3 +1,7 @@
+/**
+ * Implementation in progress.
+ */
+
 export class Buffer{
     constructor(gamma = 0.99){
         this.gamma = gamma;
