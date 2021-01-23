@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8">
+  <title>RLlib examples</title>
+  <link rel="stylesheet" type="text/css" href="src/css/styles.css" />
+  <link rel="stylesheet" type="text/css" href="src/css/MovingButtons.css" />
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.min.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/tensorflow/2.8.5/tf.min.js'></script>
+  <script src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.4.3/dist/tfjs-vis.umd.min.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js'></script>
+  <script src='src/js/threejs/stats.min.js'></script>
+  <script src='src/js/threejs/FlyControls.js'></script>
+  <script src='src/js/threejs/ColladaLoader.js'></script>
+  <script src='src/js/controls.js'></script>
+  <script src='src/js/neuralnetworks.js'></script>
+  <script src='src/js/types.js'></script>
+  <script src='src/js/utils.js'></script>
+  <script src='src/js/ui/SimplePPOUI.js'></script>
+  <script src='src/js/envs/World3D/HuntersWorld3D.js'></script>
+</head>
+ <body>
+
+<script>
+tf.disableDeprecationWarnings();
+
+// import {FlatAreaEatWorld_c, Agent as FlatAgent} from "./src/jsm/envs/FlatAreaWorld/FlatAreaEatWorld_c"
+// import {TestWorld_c, Agent as TestAgent} from "./src/jsm/envs/TestWorld/TestWorld_c"
+// import {HuntersWorld, Agent as HunterAgent} from "./src/jsm/envs/HuntersWorld/HuntersWorld"
+// import {HuntersWorld as HuntersWorld3D, Agent as HunterAgent3D} from "./src/jsm/envs/World3D/HuntersWorld3D"
+// import {build_full_connected}  from './src/jsm/neuralnetworks';
+// import {getWeightsFromModelToWorkerTransfer, setWeightsToModelByObject}  from './src/jsm/utils';
+// import {SimpleUI} from './src/jsm/ui/SimplePPOUI'
+let curretWorldClass = HuntersWorld3D;
+
+var PPOworker = new Worker("./src/js/agents/policy_gradients/ppo_class_worker.js");
+
+var a = new HunterAgent3D({eyes_count: 10});
+let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.action_space.shape, 'tanh', 'tanh');
+let weights_obj = getWeightsFromModelToWorkerTransfer(cur_nn);
+let ui = new SimpleUI({parent: document.body, policy_nn: cur_nn, worker: PPOworker});
+var w = new curretWorldClass({});
+//cur_nn = tf.loadLayersModel('http://localhost:1234/models/mymodel.json');
+w.addAgent(a);
+PPOworker.onmessage = function(e){
+    if(e.data.msg_type === "step"){
+        var step_data = w.step(e.data.action);
+        PPOworker.postMessage({msg_type: "step", step_data: step_data, n_obs: w.n_obs, e_r: w.get_episode_reward(), e_l: w.get_episode_length()});
+    }
+    if(e.data.msg_type === "get_policy_weights_answer"){
+        let model_p = build_full_connected(a.observation_space.shape, [64,64], a.action_space.shape, 'tanh', 'tanh');
+        model_p = setWeightsToModelByObject(model_p, e.data.policy_weights);
+        model_p.save('downloads://policy');
+
+        let model_v = build_full_connected(a.observation_space.shape, [64,64], a.action_space.shape, 'tanh', 'tanh');
+        model_v = setWeightsToModelByObject(model_v, e.data.value_weights);
+        model_v.save('downloads://value');
+
+    }
+    if(e.data.msg_type === "set_policy_weights_answer"){
+        alert('Weights were set');
+    }
+}
+
+
+tf.setBackend("cpu").then(()=>{
+    PPOworker.postMessage({
+        msg_type: "start",
+        observation_space: a.observation_space,
+        action_space: a.action_space,
+        n_obs: w.n_obs,
+        policy_nn: weights_obj
+    });
+    
+});
+
+
+
+
+</script>
+ </body>
+</html>
