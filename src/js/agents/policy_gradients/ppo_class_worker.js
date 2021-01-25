@@ -55,7 +55,7 @@ function start(e){
         let obs_dim = agent.observation_space.shape;
         let act_dim = agent.action_space.shape
 
-        let model = build_full_connected(obs_dim, [64,64], act_dim, 'tanh', 'tanh');
+        let model = build_full_connected(obs_dim, [128,128], act_dim, 'tanh', 'tanh');
         if (policy_nn){
             model = setWeightsToModelByObject(model, policy_nn);
         }

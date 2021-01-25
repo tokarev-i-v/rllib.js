@@ -33,7 +33,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 10.0;
+    this.reward = 1.0;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -55,7 +55,7 @@ class Food {
 /**
  * Class describes targets, that must be eaten by agent.
  * Charasteristics:
- *  --reward: 0.99
+ *  --reward: -0.99
  */
 class Poison {
   /**
@@ -390,9 +390,9 @@ class HuntersWorld {
       this.params_setter = params_setter.bind(this);
 
       this._default_params = {
-        "items_count": 4000,
-        "W": 200,
-        "H": 200,
+        "items_count": 500,
+        "W": 80,
+        "H": 80,
         "algorithm": null,
         "UI": null
       };
