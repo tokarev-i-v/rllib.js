@@ -32,7 +32,6 @@
         margin: 0;
         padding: 0;
       }
-
       #renderCanvas {
         width: 100%;
         height: 100%;
@@ -43,12 +42,172 @@
   <body>
     <canvas id="renderCanvas"></canvas>
     <script>
+      //is there a helper function that shows the local xyz?
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      class Agent {
+        constructor() {
+          this.body = new BABYLON.MeshBuilder.CreateBox(
+            "box",
+            { height: 1, width: 1, depth: 1 },
+            scene
+          );
+          //saving references allows us to dispose the ray helpers once we create new ones. Not disposing caused the multiple rays being attached to the mesh.
+          this.rayHelper;
+          this.rayHelperTwo;
+          this.rayHelperThree;
+          this.body.position.y = 0;
+          this.sideRaysRadius = 0.5;
+          this.body.material = new BABYLON.StandardMaterial(scene);
+          this.body.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0);          
+        }
+        //one final test!
+        moveNorth() {
+          this.body.position.z = this.body.position.z + 0.1;
+        }
+        moveSouth() {
+          this.body.position.z = this.body.position.z - 0.1;
+        }
+        moveEast() {
+          this.body.position.x = this.body.position.x + 0.1;
+        }
+        moveWest() {
+          this.body.position.x = this.body.position.x - 0.1;
+        }
+        rotateRight() {
+          this.body.rotation.y = this.body.rotation.y + 0.01;
+        }
+        rotateLeft() {
+          this.body.rotation.y = this.body.rotation.y - 0.01;
+        }
+        vecToLocal(vector, mesh) {
+          var m = mesh.getWorldMatrix();
+          var v = BABYLON.Vector3.TransformCoordinates(vector, m);
+          return v;
+        }
+
+        // createScene.scene
+        // divide it into smaller functions
+        // one responsibility or not?
+        castRay(arg) {
+          
+          
+          //const or let
+          //const if the variable will not be changed (const dies after the function is called)
+          //let, so they can be changed
+          // (var lives for a long period do not use as it causes memory leaks)
+                    
+          var origin = agent.body.position;
+          var length = 10;
+          
+          const forward = this.body.getDirection(BABYLON.Vector3.Forward());
+          const left = this.body.getDirection(new BABYLON.Vector3(-1 * this.sideRaysRadius, 0, 1));
+          const right = this.body.getDirection(new BABYLON.Vector3(this.sideRaysRadius, 0, 1));
+          
+          //here are the rays
+          var ray = new BABYLON.Ray(origin, forward, length);
+          var rayTwo = new BABYLON.Ray(origin, left, length); 
+          var rayThree = new BABYLON.Ray(origin, right, length); 
+          //var rayThree = new BABYLON.Ray(origin, direction, length);
+
+          //here are the ray helpers & here we dispose them. 
+          if(this.rayHelper) {
+            this.rayHelper.dispose();
+          }
+
+          if(this.rayHelperTwo) {
+            this.rayHelperTwo.dispose();
+          }
+          
+          if(this.rayHelperThree) {
+            this.rayHelperThree.dispose();
+          }
+          
+          this.rayHelper = new BABYLON.RayHelper(ray);
+          this.rayHelperTwo = new BABYLON.RayHelper(rayTwo);
+          this.rayHelperThree = new BABYLON.RayHelper(rayThree);
+          //somehow these variables reverse the mouse direction...
+
+          //showing the rays with a ray helper
+          // this.rayHelper.attachToMesh(
+          //   this.body,            
+          //   forward,
+          //   this.body.localMeshOrigin,
+          //   length
+          // );
+          this.rayHelper.show(arg);
+
+          // this.rayHelperTwo.attachToMesh(
+          //   this.body,
+          //   left,
+          //   this.body.localMeshOrigin,
+          //   length
+          // );
+          this.rayHelperTwo.show(arg);
+          
+          // this.rayHelperThree.attachToMesh(
+          //   this.body,
+          //   right,
+          //   this.body.localMeshOrigin,
+          //   length
+          // );
+          this.rayHelperThree.show(arg);
+          
+          //hit detection and print out
+          var hit = arg.pickWithRay(ray);
+          if (hit.pickedMesh) {
+            console.log(hit.pickedMesh.id);
+          }
+          var hitTwo = arg.pickWithRay(rayTwo);
+          if (hitTwo.pickedMesh) {
+            console.log(hitTwo.pickedMesh.id);
+          }
+          var hitTwo = arg.pickWithRay(rayThree);
+          if (hitTwo.pickedMesh) {
+            console.log(hitTwo.pickedMesh.id);
+          }
+        }
+      }
+      class Apple {
+        constructor(xIn, zIn) {
+          this.body = BABYLON.MeshBuilder.CreateSphere("apple", {});
+          this.body.position.x = xIn;
+          this.body.position.z = zIn;
+          this.appleMaterial = new BABYLON.StandardMaterial(
+            "myMaterial",
+            scene
+          );
+          this.appleMaterial.emissiveColor = new BABYLON.Color3(0, 0, 1);
+          this.body.material = this.appleMaterial;
+        }
+      }
+      class Poison {
+        constructor(xIn, zIn) {
+          this.body = BABYLON.MeshBuilder.CreateBox("poison", {});
+          this.body.position.x = xIn;
+          this.body.position.z = zIn;
+          this.poisonMaterial = new BABYLON.StandardMaterial(
+            "myMaterial",
+            scene
+          );
+          this.poisonMaterial.emissiveColor = new BABYLON.Color3(1, 0, 0);
+          this.body.material = this.poisonMaterial;
+        }
+      }
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
       var canvas = document.getElementById("renderCanvas");
+
+      //something got fucked up with the canvas re-sizing
+      //canvas.height = 1000;
+      //canvas.width = 1000;
+
       var engine = null;
       var scene = null;
       var sceneToRender = null;
       var xr;
       var xrCamera;
+      //agent
+      var agent;
 
       var createDefaultEngine = function() {
         return new BABYLON.Engine(canvas, true, {
@@ -130,13 +289,54 @@
         groundMaterial.opacity = 0.98;
         ground.material = groundMaterial; //new BABYLON.GridMaterial("mat", scene);
 
+        //AGENT INITIALIZATION
+        agent = new Agent();
+        agent.body.isPickable = false;
+
+        //this is a helper to debug agent motion
+        function mousemovef() {
+          var pickResult = scene.pick(scene.pointerX, scene.pointerY);
+          if (pickResult.hit) {
+            var diffX = pickResult.pickedPoint.x - agent.body.position.x;
+            var diffY = pickResult.pickedPoint.z - agent.body.position.z;
+            agent.body.rotation.y = Math.atan2(diffX, diffY);
+          }
+        }
+        scene.onPointerMove = function() {
+          mousemovef();
+        };
+        //making available to global scope for update
+        //scene.ray = castRay;
+
+        //////////
+
+        //FRUITS AND POISONS INITIALIZATION
+        for (var i = 0; i < 10; i++) {
+          const flips = [-1, 1];
+          function randomFlip(flips) {
+            return flips[Math.floor(Math.random() * flips.length)];
+          }
+          var randomX = Math.random() * 50 * randomFlip(flips);
+          var randomZ = Math.random() * 50 * randomFlip(flips);
+          apple = new Apple(randomX, randomZ);
+        }
+        for (var i = 0; i < 10; i++) {
+          const flips = [-1, 1];
+          function randomFlip(flips) {
+            return flips[Math.floor(Math.random() * flips.length)];
+          }
+          var randomX = Math.random() * 50 * randomFlip(flips);
+          var randomZ = Math.random() * 50 * randomFlip(flips);
+          poison = new Poison(randomX, randomZ);
+        }
+
         // enable xr
         const xr = await scene.createDefaultXRExperienceAsync({
           floorMeshes: [ground]
           //multiView: true
           //useMultiview:true
         });
-        
+
         // enable physics
         const xrPhysics = xr.baseExperience.featuresManager.enableFeature(
           BABYLON.WebXRFeatureName.PHYSICS_CONTROLLERS,
@@ -151,7 +351,6 @@
             enableHeadsetImpostor: true
           }
         );
-
 
         //XR-way of interacting with the controllers for the left hand:
         xr.input.onControllerAddedObservable.add(controller => {
@@ -204,8 +403,20 @@
         sceneToRender = returnedScene;
       });
 
-      engine.runRenderLoop(function() {        
+      engine.runRenderLoop(function() {
         if (sceneToRender) {
+          
+          //agent casts a ray
+          
+          //something here is resetting the position;
+          agent.castRay(sceneToRender);
+          
+          
+          //these are MOVEMENT TESTS
+          //agent.moveNorth();
+          //agent.rotateRight();
+          
+          
           sceneToRender.render();
         }
       });
