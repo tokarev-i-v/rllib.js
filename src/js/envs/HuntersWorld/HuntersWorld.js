@@ -33,7 +33,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 0.99;
+    this.reward = 10.0;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -137,7 +137,7 @@ class Bullet {
 /**
  * Agent from this world;
  */
-export class Agent{
+class Agent{
   /**
    * 
    * @param {Object} opt 
@@ -150,7 +150,7 @@ export class Agent{
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // left
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // top
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // bottom
-	    new THREE.MeshStandardMaterial( { map: THREE.ImageUtils.loadTexture('./hunter_black_278.png') } ), // back
+	    new THREE.MeshStandardMaterial( { map: THREE.ImageUtils.loadTexture('src/images/hunter_black_278.png') } ), // back
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } )  // front
 	];
 
@@ -172,12 +172,13 @@ export class Agent{
     let alpha = -(dalpha*this.eyes_count)/2;
     /**Now we create agent's eyes*/
     for (let i = 0; i < this.eyes_count; i++){
-        let eye = new Eye(this, alpha, r);
-        let mesh = eye.view;
-        this.view.add(mesh);
-        this.eyes.push(eye);
-        alpha += dalpha;
-    }
+      let eye = new Eye(this, alpha, r);
+      let mesh = eye.view;
+      this.view.add(mesh);
+      this.view.add(eye.sphere_point);
+      this.eyes.push(eye);
+      alpha += dalpha;
+  }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
       this._frontEye = this.eyes[Math.round(this.eyes.length/2)];
@@ -301,7 +302,7 @@ export class Agent{
  * @class Eye
  * It presents as agent's eye detector.
  */
-export class Eye{
+class Eye{
   /**
    * 
    * @param {THREE.Vector3} agent_pos_vec Vector that would use as src
@@ -310,14 +311,30 @@ export class Eye{
    * @param {Number} r radius
    */
   constructor(a, alpha, r){
-    this._view = new THREE.Mesh(
-      new THREE.BoxBufferGeometry(1,1,10),
-      new THREE.MeshBasicMaterial({color: 0x111111})
+
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 3 } );    
+    const positions = [];
+    const colors = [];
+
+    positions.push( 0, 0, 0 );
+    positions.push(Math.sin(Math.PI*alpha/180)*r,0,  Math.cos(Math.PI*alpha/180)*r)
+
+    
+    geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
+		// geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+    this._view = new THREE.Line(
+      geometry,
+      material
     );
+    this.sphere_point = new THREE.Mesh(
+      new THREE.SphereBufferGeometry(0.1, 10, 10),
+      new THREE.MeshBasicMaterial({color:0x000000})
+    )
+    this.sphere_point.geometry.computeBoundingBox();
+    this.sphere_point.position.set(Math.sin(Math.PI*alpha/180)*r, 0, Math.cos(Math.PI*alpha/180)*r);
+    this.end_position = new THREE.Vector3(Math.sin(Math.PI*alpha/180)*r,Math.cos(Math.PI*alpha/180)*r,  Math.PI/2);
     /**setting Eye position and rotation */
-    this._view.position.x = Math.sin(Math.PI*alpha/180)*r;
-    this._view.position.z = Math.cos(Math.PI*alpha/180)*r;
-    this._view.rotation.x = Math.PI/2;
     this._view.geometry.computeBoundingBox();
     this.raycaster = new THREE.Raycaster();
     this.max_range = 20;
@@ -337,12 +354,13 @@ export class Eye{
         return el.view;
     });
     let dst = new THREE.Vector3();
-    dst.setFromMatrixPosition( this._view.matrixWorld );
-    dst.add(this.a.position.clone().negate());
+    dst.setFromMatrixPosition( this.sphere_point.matrixWorld );
+    dst.sub(this.a.position.clone());
     dst.normalize();
     this.raycaster.set(this.a.position, dst);
     let intersects = this.raycaster.intersectObjects(targets);
     if (intersects.length > 0 && intersects[0].distance < this.max_range){
+      intersects[0].object.material.color.setHex( 0x0000ff );
       return {obj: intersects[0].object, type: intersects[0].object._rl.type, dist: intersects[0].distance}
     } else {
       return null;
@@ -357,7 +375,7 @@ export class Eye{
    * @class
    * World Contains all features.
    */
-export class HuntersWorld {
+class HuntersWorld {
 
     /**
      * 
@@ -465,14 +483,14 @@ export class HuntersWorld {
       this.Controls = new MobileControls({Camera: this.Camera, Object3D: this.CameraObj});      
       this.Scene.add(this.CameraObj);
     }else {
-      this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
+      this.Controls = new THREE.FlyControls(this.Camera, document.getElementById("MainContainer"));
       this.Controls.movementSpeed = 13;
       this.Controls.rollSpeed = Math.PI / 8;
       this.Controls.autoForward = false;
       this.Controls.dragToLook = true;  
     }
 
-    this.Loader = new ColladaLoader();
+    this.Loader = new THREE.ColladaLoader();
 
     this.AmbientLight = new THREE.AmbientLight(0xFFFFFF, 0.9);
     this.Scene.add(this.AmbientLight);
@@ -482,7 +500,7 @@ export class HuntersWorld {
 
     if(typeof(document) !== typeof(undefined)){
       let TextureLoader = new THREE.TextureLoader();
-      TextureLoader.load("grass.png", function (tex) {
+      TextureLoader.load("src/images/grass.png", function (tex) {
           tex.wrapS = THREE.RepeatWrapping;
           tex.wrapT = THREE.RepeatWrapping;
           tex.repeat.set(100, 100);

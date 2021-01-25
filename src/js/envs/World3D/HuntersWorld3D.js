@@ -32,7 +32,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 2.0;
+    this.reward = 10.0;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -507,18 +507,6 @@ class HuntersWorld3D {
     
     this.Clock = new THREE.Clock();
 
-    // if(typeof(document) !== typeof(undefined)){
-    //   let TextureLoader = new THREE.TextureLoader();
-    //   TextureLoader.load("grass.png", function (tex) {
-    //       tex.wrapS = THREE.RepeatWrapping;
-    //       tex.wrapT = THREE.RepeatWrapping;
-    //       tex.repeat.set(100, 100);
-    //       let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
-    //       ground.rotation.x -= Math.PI/2;
-    //       this.Scene.add(ground);
-    //   }.bind(this));
-
-    // }
   }
     onWindowResize() {
       this.Camera.aspect = window.innerWidth / window.innerHeight;
