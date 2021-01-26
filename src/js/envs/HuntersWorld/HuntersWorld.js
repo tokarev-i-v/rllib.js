@@ -70,7 +70,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -0.99;
+    this.reward = -7;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
