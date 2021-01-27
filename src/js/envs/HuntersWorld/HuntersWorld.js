@@ -33,7 +33,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 1.0;
+    this.reward = 9.0;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -70,7 +70,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -7;
+    this.reward = -70;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -360,7 +360,7 @@ class Eye{
     this.raycaster.set(this.a.position, dst);
     let intersects = this.raycaster.intersectObjects(targets);
     if (intersects.length > 0 && intersects[0].distance < this.max_range){
-      intersects[0].object.material.color.setHex( 0x0000ff );
+      // intersects[0].object.material.color.setHex( 0x0000ff );
       return {obj: intersects[0].object, type: intersects[0].object._rl.type, dist: intersects[0].distance}
     } else {
       return null;
@@ -571,7 +571,7 @@ class HuntersWorld {
           this.removeBullet(el);
         }else if (el.way.length() > 20){
           this.removeBullet(el);
-          this.agents[0].digestion_signal += -0.99;
+          this.agents[0].digestion_signal += -10;
         }
       }
     }
@@ -731,6 +731,7 @@ class HuntersWorld {
       reward = rewards[0];
       let info = {};
       
+      // reward -= this.clock;
       let ret_data = [state, reward, done, info];
       if(this.clock % 1000 == 0){
         done = true;

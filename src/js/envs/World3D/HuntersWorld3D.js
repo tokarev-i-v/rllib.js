@@ -69,7 +69,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -0.99;
+    this.reward = -70;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -568,7 +568,7 @@ class HuntersWorld3D {
           this.removeBullet(el);
         }else if (el.way.length() > 20){
           this.removeBullet(el);
-          this.agents[0].digestion_signal += -2.00;
+          this.agents[0].digestion_signal += -10;
         }
       }
     }
