@@ -22,7 +22,7 @@
     "express": "^4.17.1",
     "gl": "^4.8.0",
     "hammerjs": "^2.0.8",
-    "jasmine": "^3.6.1",
+    "jasmine": "^3.8.0",
     "jsdom": "^16.4.0",
     "latest": "^0.2.0",
     "mocha": "^8.1.3",
@@ -33,7 +33,8 @@
   "scripts": {
     "dqn": "cross-env NODE_ENV=development parcel dqn.html --open --no-hmr --target browser --global window",
     "vr_env": "cross-env NODE_ENV=development parcel vr-env.html --open --no-hmr --target browser --global window",
-    "ppo": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
+    "ppo_3d": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
+    "ppo_2d": "concurrently \"http-server -a localhost -p 8080\" \"open http://localhost:8080/ppo-example-2d.html\"",
     "ppo_dense": "cross-env NODE_ENV=development parcel examples/ppo_dense_hunter_world_3d.html ./agents/policy_gradients/ppo_class_worker.js --open --no-hmr --target browser --global window",
     "ppo_node": "node -r esm ppo_node.js",
     "build": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --target browser --out-dir build --public-url ./",
@@ -52,6 +53,7 @@
     "cross-env": "^7.0.2",
     "eslint": "^6.8.0",
     "eslint-config-google": "^0.9.1",
+    "http-server": "^0.12.3",
     "parcel-bundler": "^1.12.4",
     "parcel-plugin-static-files-copy": "^2.5.0"
   },
