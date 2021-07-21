@@ -63,18 +63,18 @@ class SimpleUI{
 
     initPolicyWeightsPathInput(){
         if(document){
-            this.setWeightsButton = document.createElement("input");
-            this.setWeightsButton.type = "text";
-            this.setWeightsButton.style.left = "0px";
-            this.setWeightsButton.style.top = "100px";          
-            this.setWeightsButton.id = "ppo_ui_set_policy_weight_input";
-            this.setWeightsButton.style.zIndex = 10;
-            this.setWeightsButton.style.position = 'absolute';
+            this.policyWeightsPath = document.createElement("input");
+            this.policyWeightsPath.type = "text";
+            this.policyWeightsPath.style.left = "0px";
+            this.policyWeightsPath.style.top = "100px";          
+            this.policyWeightsPath.id = "ppo_ui_set_policy_weight_input";
+            this.policyWeightsPath.style.zIndex = 10;
+            this.policyWeightsPath.style.position = 'absolute';
 
             if(this.parent){
-                this.parent.appendChild(this.setWeightsButton);
+                this.parent.appendChild(this.policyWeightsPath);
             } else {
-                document.body.appendChild(this.setWeightsButton);
+                document.body.appendChild(this.policyWeightsPath);
                 this.parent = document.body;
             }
         }
@@ -82,18 +82,18 @@ class SimpleUI{
 
     initValueWeightsPathInput(){
         if(document){
-            this.setWeightsButton = document.createElement("input");
-            this.setWeightsButton.type = "text";
-            this.setWeightsButton.style.left = "0px";
-            this.setWeightsButton.style.top = "130px";          
-            this.setWeightsButton.id = "ppo_ui_set_value_weight_input";
-            this.setWeightsButton.style.zIndex = 10;
-            this.setWeightsButton.style.position = 'absolute';
+            this.valueWeightsPath = document.createElement("input");
+            this.valueWeightsPath.type = "text";
+            this.valueWeightsPath.style.left = "0px";
+            this.valueWeightsPath.style.top = "130px";          
+            this.valueWeightsPath.id = "ppo_ui_set_value_weight_input";
+            this.valueWeightsPath.style.zIndex = 10;
+            this.valueWeightsPath.style.position = 'absolute';
 
             if(this.parent){
-                this.parent.appendChild(this.setWeightsButton);
+                this.parent.appendChild(this.valueWeightsPath);
             } else {
-                document.body.appendChild(this.setWeightsButton);
+                document.body.appendChild(this.valueWeightsPath);
                 this.parent = document.body;
             }
         }
@@ -101,12 +101,14 @@ class SimpleUI{
 
 
     setWeights(){
-        let pth = 'http://localhost:1234/' + this.setWeightsButton.value;
-        this.policy_nn = tf.loadLayersModel(pth);    
+        let policy_path = window.location.origin + "/" + this.policyWeightsPath.value;
+        let value_path = window.location.origin + "/" + this.valueWeightsPath.value;
+        this.policy_nn = tf.loadLayersModel(policy_path);    
         this.worker.postMessage({
             msg_type: "set_policy_weights",
             // policy_nn: getWeightsFromModelToWorkerTransfer(this.policy_nn),
-            weights_path: pth
+            policy_weights_path: policy_path,
+            value_weights_path: value_path,
         });
     }
 

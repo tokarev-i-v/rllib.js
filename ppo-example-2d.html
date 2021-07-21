@@ -5,8 +5,8 @@
   <title>RLlib examples</title>
   <link rel="stylesheet" type="text/css" href="src/css/styles.css" />
   <link rel="stylesheet" type="text/css" href="src/css/MovingButtons.css" />
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.min.js'></script>
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/tensorflow/2.8.5/tf.min.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/tensorflow/3.8.0/tf.min.js'></script>
   <script src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.4.3/dist/tfjs-vis.umd.min.js'></script>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js'></script>
   <script src='src/js/threejs/stats.min.js'></script>
@@ -59,7 +59,10 @@ PPOworker.onmessage = function(e){
 
     }
     if(e.data.msg_type === "set_policy_weights_answer"){
-        alert('Weights were set');
+        alert('Policy weights were set');
+    }
+    if(e.data.msg_type === "set_value_weights_answer"){
+        alert('Value weights were set');
     }
 }
 

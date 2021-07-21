@@ -103,7 +103,7 @@ export class SimpleUI{
 
 
     setWeights(){
-        let pth = 'http://localhost:1234/' + this.setWeightsButton.value;
+        let pth = window.location.origin + "/" + this.setWeightsButton.value;
         this.policy_nn = tf.loadLayersModel(pth);    
         this.worker.postMessage({
             msg_type: "set_policy_weights",
