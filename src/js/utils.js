@@ -145,11 +145,20 @@ function get_serialized_layers_data(model){
     ];
 
     if(model){
+        let layersData = [];
         for(let layer of model.layers){
             let layer_name = layer.name;
-            let layer_shape = layer.shape;
+            let layer_shape = null;
+            if (layer_name.substring(0, 6) == "input"){
+                layer_shape = layer.inputSpec[0].shape;
+                if (layer_shape.length > 2){
+                    layer_shape = layer_shape.slice(1);
+                }
+            } else {
+                layer_shape = [layer.units];
+            }
             let layer_weights = [];
-            for (let ld in layer.getWeights()){
+            for (let ld of layer.getWeights()){
                 let weight = ld.arraySync();
                 layer_weights.push(weight);
             }
@@ -159,7 +168,9 @@ function get_serialized_layers_data(model){
                 "shape": layer_shape,
                 "layer_weights": layer_weights
             }
+            layersData.push(layerDataItem);
         }
+        return layersData;
     }
-    return model;
+    throw Error("Model must be specified.")
 }

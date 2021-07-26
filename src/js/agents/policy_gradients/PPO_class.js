@@ -264,12 +264,12 @@ class PPO{
     }
 
     async getPolicyWeights(){
-       let wghts = getWeightsFromModelToWorkerTransfer(this.policy_nn);
+       let wghts = get_serialized_layers_data(this.policy_nn);
        return wghts;
     }
 
     async getValueWeights(){
-        let wghts = getWeightsFromModelToWorkerTransfer(this.value_nn);
+        let wghts = get_serialized_layers_data(this.value_nn);
         return wghts;
     }
 
