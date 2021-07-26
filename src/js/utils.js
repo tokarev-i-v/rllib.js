@@ -149,10 +149,10 @@ function get_serialized_layers_data(model){
         for(let layer of model.layers){
             let layer_name = layer.name;
             let layer_shape = null;
-            if (layer_name.substring(0, 6) == "input"){
+            if (layer_name.substring(0, 5) == "input"){
                 layer_shape = layer.inputSpec[0].shape;
                 if (layer_shape.length > 2){
-                    layer_shape = layer_shape.slice(1);
+                    layer_shape = layer_shape.slice(1, layer_shape.length);
                 }
             } else {
                 layer_shape = [layer.units];
@@ -171,6 +171,22 @@ function get_serialized_layers_data(model){
             layersData.push(layerDataItem);
         }
         return layersData;
+    }
+    throw Error("Model must be specified.")
+}
+
+function create_model_by_serialized_data(model_weight_data){
+    if(model_weight_data){
+        let inputt = tf.input({shape: model_weight_data[0].shape});
+        let cur_layer = inputt;
+        for(let layer of model_weight_data.slice(1, model_weight_data.length)){
+            let layer_name = layer.name;
+            let layer_shape = layer.shape;
+            let layer_activation = layer.activation;
+            cur_layer = tf.layers.dense({units: layer_shape, activation: layer_activation}).apply(cur_layer);
+        }
+        const model = tf.model({inputt, cur_layer});
+        return model;
     }
     throw Error("Model must be specified.")
 }
