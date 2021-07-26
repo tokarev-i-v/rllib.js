@@ -77,3 +77,89 @@ function setWeightsToModelByObject(model, weights_obj){
     }
     return model;
 }
+
+
+
+
+/**
+ * 
+ * @param {tf.model} model  Tensorflow.js LayersModel
+ * 
+ *  let layerData = [
+        {
+            "name": "dense_Dense3",
+            "layers": {
+                "dense_Dense3/bias": {
+                    shape: [10],
+                    layer_data: []
+                },
+                "dense_Dense3/kernel":  {
+                    shape: [10],
+                    layer_data: []
+                }
+            }
+        },
+        {
+            "name": "dense_Dense4",
+            "layers": {
+                "dense_Dense4/bias": {
+                    shape: [10],
+                    layer_data: []
+                },
+                "dense_Dense4/kernel":  {
+                    shape: [10],
+                    layer_data: []
+                }
+            }
+        }        
+    ];
+ */
+function get_serialized_layers_data(model){
+    let layerData = [
+        {
+            "name": "dense_Dense3",
+            "layers": {
+                "dense_Dense3/bias": {
+                    shape: [10],
+                    layer_data: []
+                },
+                "dense_Dense3/kernel":  {
+                    shape: [10],
+                    layer_data: []
+                }
+            }
+        },
+        {
+            "name": "dense_Dense4",
+            "layers": {
+                "dense_Dense4/bias": {
+                    shape: [10],
+                    layer_data: []
+                },
+                "dense_Dense4/kernel":  {
+                    shape: [10],
+                    layer_data: []
+                }
+            }
+        }        
+    ];
+
+    if(model){
+        for(let layer of model.layers){
+            let layer_name = layer.name;
+            let layer_shape = layer.shape;
+            let layer_weights = [];
+            for (let ld in layer.getWeights()){
+                let weight = ld.arraySync();
+                layer_weights.push(weight);
+            }
+
+            let layerDataItem = {
+                "name": layer_name,
+                "shape": layer_shape,
+                "layer_weights": layer_weights
+            }
+        }
+    }
+    return model;
+}
