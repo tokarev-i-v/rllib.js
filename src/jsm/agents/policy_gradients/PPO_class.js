@@ -1,6 +1,7 @@
 // import * as tf from '@tensorflow/tfjs-node-gpu';
 import * as tf from '@tensorflow/tfjs';
 import {build_full_connected}  from '../../neuralnetworks';
+import {get_serialized_layers_data} from '../../utils';
 import {getWeightsFromModelToWorkerTransfer}  from '../../utils';
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
@@ -262,24 +263,38 @@ export class PPO{
         this.p_noisy = get_p_noisy;
         this.act_smp = act_smp_cont;
         this.p_log = get_p_log_cont;
-        this.s_values = build_full_connected(this.obs_dim, this.hidden_sizes, [1], 'tanh', null);
+        this.value_nn = build_full_connected(this.obs_dim, this.hidden_sizes, [1], 'tanh', null);
         this.p_opt = tf.train.adam(this.ac_lr);
         this.v_opt = tf.train.adam(this.cr_lr);
     }
 
-    async getPolicyWeights(){
-       let wghts = getWeightsFromModelToWorkerTransfer(this.policy_nn);
-       return wghts;
-    }
-
-    async getValueWeights(){
-        let wghts = getWeightsFromModelToWorkerTransfer(this.s_values);
-        return wghts;
-     }
-
     async setPolicyModel(policy_nn){
         this.policy_nn = policy_nn;
-     }    
+    }    
+     async setValueModel(value_nn){
+        this.value_nn = value_nn;
+    }    
+
+
+    async savePolicyModelToLocalStorage(){
+        let sr = await this.policy_nn.save('localstorage://policy_nn');
+        return 'localstorage://policy_nn';
+     }
+ 
+     async saveValueModelToLocalStorage(){
+         let sr = await this.value_nn.save('localstorage://value_nn');
+         return 'localstorage://value_nn';
+     }
+
+    async getPolicyWeights(){
+        let wghts = get_serialized_layers_data(this.policy_nn);
+        return wghts;
+    }
+ 
+    async getValueWeights(){
+        let wghts = get_serialized_layers_data(this.value_nn);
+        return wghts;
+    }
 
     async train(){
         let step_count = 0;
@@ -299,7 +314,7 @@ export class PPO{
                     let policy_nn_val = this.policy_nn.apply(nobs);
                     let p_noisy_val = this.p_noisy(policy_nn_val, this.log_std);
                     let act1 = this.act_smp(p_noisy_val, this.low_action_space, this.high_action_space);
-                    let val = this.s_values.apply(nobs);
+                    let val = this.value_nn.apply(nobs);
                     let act = tf.squeeze(act1);
                     env.action = act.arraySync();
                     let [obs2, rew, done, _] = await env.step();
@@ -334,7 +349,7 @@ export class PPO{
 
                 let nobs = tf.tensor([env.n_obs]);
                 nobs = tf.expandDims(nobs, 0);
-                let last_v = this.s_values.apply(nobs);
+                let last_v = this.value_nn.apply(nobs);
                 buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v.arraySync()[0][0][0]);
             }        
 
@@ -373,12 +388,12 @@ export class PPO{
                 let minib = shuffled_batch.slice(idx, Math.min(idx+this.minibatch_size,lb));
                 let gat_tensor = tf.tensor(new Int32Array(minib) );
                 let v_loss = ()=> tf.tidy(()=>{
-                    let s_v = tf.squeeze(this.s_values.apply(obs_batch.gather(gat_tensor)));
+                    let s_v = tf.squeeze(this.value_nn.apply(obs_batch.gather(gat_tensor)));
                     let v_loss_v = tf.mean(rtg_batch.gather(gat_tensor).sub(s_v).square());
                     return v_loss_v;
                 });
 
-                let  gradients = tf.variableGrads(v_loss, this.s_values.getWeights());
+                let  gradients = tf.variableGrads(v_loss, this.value_nn.getWeights());
                 this.v_opt.applyGradients(gradients.grads);
                 tf.dispose(gradients);
                 tf.dispose(gat_tensor);

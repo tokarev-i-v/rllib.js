@@ -6,7 +6,7 @@ import {TestWorld_c, Agent as TestAgent} from "./src/jsm/envs/TestWorld/TestWorl
 import {HuntersWorld, Agent as HunterAgent} from "./src/jsm/envs/HuntersWorld/HuntersWorld"
 import {HuntersWorld as HuntersWorld3D, Agent as HunterAgent3D} from "./src/jsm/envs/World3D/HuntersWorld3D"
 import {build_full_connected}  from './src/jsm/neuralnetworks';
-import {getWeightsFromModelToWorkerTransfer, setWeightsToModelByObject}  from './src/jsm/utils';
+import {getWeightsFromModelToWorkerTransfer, create_model_by_serialized_data}  from './src/jsm/utils';
 import {SimpleUI} from './src/jsm/ui/SimplePPOUI'
 let curretWorldClass = HuntersWorld3D;
 
@@ -24,21 +24,11 @@ PPOworker.onmessage = function(e){
         var step_data = w.step(e.data.action);
         PPOworker.postMessage({msg_type: "step", step_data: step_data, n_obs: w.n_obs, e_r: w.get_episode_reward(), e_l: w.get_episode_length()});
     }
-    // if(e.data.msg_type === "get_policy_weights_answer"){
-    //     let model_p = build_full_connected(a.observation_space.shape, [64,64], a.action_space.shape, 'tanh', 'tanh');
-    //     model_p = setWeightsToModelByObject(model_p, e.data.policy_weights);
-    //     model_p.save('downloads://policy');
-
-    //     let model_v = build_full_connected(a.observation_space.shape, [64,64], a.action_space.shape, 'tanh', 'tanh');
-    //     model_v = setWeightsToModelByObject(model_v, e.data.value_weights);
-    //     model_v.save('downloads://value');
-
-    // }
     if(e.data.msg_type === "get_policy_weights_answer"){
-        let model_p = tf.loadLayersModel(e.data.policyModelName)
+        let model_p = create_model_by_serialized_data(e.data.policy_weights);
         model_p.save('downloads://policy');
 
-        let model_v = tf.loadLayersModel(e.data.valueModelName)
+        let model_v = create_model_by_serialized_data(e.data.value_weights);
         model_v.save('downloads://value');
 
     }

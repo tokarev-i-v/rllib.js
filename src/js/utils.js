@@ -115,34 +115,6 @@ function setWeightsToModelByObject(model, weights_obj){
     ];
  */
 function get_serialized_layers_data(model){
-    let layerData = [
-        {
-            "name": "dense_Dense3",
-            "layers": {
-                "dense_Dense3/bias": {
-                    shape: [10],
-                    layer_data: []
-                },
-                "dense_Dense3/kernel":  {
-                    shape: [10],
-                    layer_data: []
-                }
-            }
-        },
-        {
-            "name": "dense_Dense4",
-            "layers": {
-                "dense_Dense4/bias": {
-                    shape: [10],
-                    layer_data: []
-                },
-                "dense_Dense4/kernel":  {
-                    shape: [10],
-                    layer_data: []
-                }
-            }
-        }        
-    ];
 
     if(model){
         let layersData = [];

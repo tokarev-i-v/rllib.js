@@ -106,7 +106,6 @@ class SimpleUI{
         this.policy_nn = tf.loadLayersModel(policy_path);    
         this.worker.postMessage({
             msg_type: "set_policy_weights",
-            // policy_nn: getWeightsFromModelToWorkerTransfer(this.policy_nn),
             policy_weights_path: policy_path,
             value_weights_path: value_path,
         });

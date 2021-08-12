@@ -103,12 +103,13 @@ export class SimpleUI{
 
 
     setWeights(){
-        let pth = window.location.origin + "/" + this.setWeightsButton.value;
-        this.policy_nn = tf.loadLayersModel(pth);    
+        let policy_path = window.location.origin + "/" + this.policyWeightsPath.value;
+        let value_path = window.location.origin + "/" + this.valueWeightsPath.value;
+        this.policy_nn = tf.loadLayersModel(policy_path);    
         this.worker.postMessage({
             msg_type: "set_policy_weights",
-            // policy_nn: getWeightsFromModelToWorkerTransfer(this.policy_nn),
-            weights_path: pth
+            policy_weights_path: policy_path,
+            value_weights_path: value_path,
         });
     }
 
