@@ -14,7 +14,7 @@
     "@tensorflow/tfjs-core": "^3.8.0",
     "@tensorflow/tfjs-node": "^3.8.0",
     "@tensorflow/tfjs-node-gpu": "^3.8.0",
-    "@tensorflow/tfjs-vis": "^1.4.3",
+    "@tensorflow/tfjs-vis": "^1.5.1",
     "babel-node": "^0.0.1-security",
     "chai": "^4.2.0",
     "dat.gui": "^0.7.7",

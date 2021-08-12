@@ -17,7 +17,6 @@ let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.actio
 let weights_obj = getWeightsFromModelToWorkerTransfer(cur_nn);
 let ui = new SimpleUI({parent: document.body, policy_nn: cur_nn, worker: PPOworker});
 var w = new curretWorldClass({});
-//cur_nn = tf.loadLayersModel('http://localhost:1234/models/mymodel.json');
 w.addAgent(a);
 PPOworker.onmessage = function(e){
     if(e.data.msg_type === "step"){
@@ -41,7 +40,7 @@ PPOworker.onmessage = function(e){
 }
 
 
-tf.setBackend("cpu").then(()=>{
+tf.setBackend("webgl").then(()=>{
     PPOworker.postMessage({
         msg_type: "start",
         observation_space: a.observation_space,
