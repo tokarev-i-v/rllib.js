@@ -18,17 +18,18 @@ let weights_obj = getWeightsFromModelToWorkerTransfer(cur_nn);
 let ui = new SimpleUI({parent: document.body, policy_nn: cur_nn, worker: PPOworker});
 var w = new curretWorldClass({});
 w.addAgent(a);
-PPOworker.onmessage = function(e){
+PPOworker.onmessage = async function(e){
     if(e.data.msg_type === "step"){
         var step_data = w.step(e.data.action);
         PPOworker.postMessage({msg_type: "step", step_data: step_data, n_obs: w.n_obs, e_r: w.get_episode_reward(), e_l: w.get_episode_length()});
     }
     if(e.data.msg_type === "get_policy_weights_answer"){
+        console.log(1);
         let model_p = create_model_by_serialized_data(e.data.policy_weights);
-        model_p.save('downloads://policy');
+        await model_p.save('downloads://policy');
 
         let model_v = create_model_by_serialized_data(e.data.value_weights);
-        model_v.save('downloads://value');
+        await model_v.save('downloads://value');
 
     }
     if(e.data.msg_type === "set_policy_weights_answer"){
