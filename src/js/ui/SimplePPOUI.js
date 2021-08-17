@@ -105,7 +105,7 @@ class SimpleUI{
         let value_path = window.location.origin + "/" + this.valueWeightsPath.value;
         this.policy_nn = tf.loadLayersModel(policy_path);    
         this.worker.postMessage({
-            msg_type: "set_policy_weights",
+            msg_type: "load_weigths_by_path",
             policy_weights_path: policy_path,
             value_weights_path: value_path,
         });

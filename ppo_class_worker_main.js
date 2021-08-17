@@ -24,7 +24,6 @@ PPOworker.onmessage = async function(e){
         PPOworker.postMessage({msg_type: "step", step_data: step_data, n_obs: w.n_obs, e_r: w.get_episode_reward(), e_l: w.get_episode_length()});
     }
     if(e.data.msg_type === "get_policy_weights_answer"){
-        console.log(1);
         let model_p = create_model_by_serialized_data(e.data.policy_weights);
         await model_p.save('downloads://policy');
 

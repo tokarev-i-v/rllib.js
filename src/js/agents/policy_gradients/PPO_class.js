@@ -400,11 +400,7 @@ class PPO{
         rtg_batch.dispose();
 
         }
-
-
     }
-
     async eval(){
-
     }
 }
