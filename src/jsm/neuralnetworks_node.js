@@ -1,4 +1,5 @@
-import * as tf from '@tensorflow/tfjs-node-gpu'
+const tf = require('@tensorflow/tfjs');
+require('@tensorflow/tfjs-node');
 
 export function build_full_connected(input_shape, hiddens_config, output_shape, activation='relu', last_activation='relu'){
     return tf.tidy(()=>{

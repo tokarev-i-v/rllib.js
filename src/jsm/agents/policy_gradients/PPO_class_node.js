@@ -1,5 +1,5 @@
-// import * as tf from '@tensorflow/tfjs-node-gpu';
-import * as tf from '@tensorflow/tfjs-node-gpu';
+const tf = require('@tensorflow/tfjs');
+require('@tensorflow/tfjs-node');
 import moment from 'moment';
 // import '@tensorflow/tfjs-node-gpu'
 import {build_full_connected}  from '../../neuralnetworks_node';

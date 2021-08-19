@@ -1,4 +1,4 @@
-import * as tf from '@tensorflow/tfjs-node-gpu'
+import * as tf from '@tensorflow/tfjs-node'
 import moment from 'moment';
 import fs from 'fs'
 /**
@@ -85,7 +85,7 @@ export function setWeightsToModelByObject(model, weights_obj){
     return model;
 }
 
-export function createCheckpoint(model, parent_path, checkpoint_number){
+export async function createCheckpoint(model, parent_path, checkpoint_number){
     //get current time
     let curr_time_str = moment().format("DD-MM-YYYY_hh-mm-ss");
     let dir = parent_path + curr_time_str + "/";
@@ -94,5 +94,5 @@ export function createCheckpoint(model, parent_path, checkpoint_number){
     }
     // let model = build_full_connected(a.observation_space.shape, [64,64], a.action_space.shape, 'tanh', 'tanh');
     // model = setWeightsToModelByObject(model, data.policy_weights);
-    model.save('file://' + dir + 'model_' + checkpoint_number);
+    model.save(tf.io.fileSystem(dir + 'model_' + checkpoint_number));
 }

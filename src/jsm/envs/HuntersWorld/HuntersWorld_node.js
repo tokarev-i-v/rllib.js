@@ -6,15 +6,11 @@
  */
 
 import * as tf from '@tensorflow/tfjs-node-gpu';
-// import * as tfvis from '@tensorflow/tfjs-vis'
-import * as THREE from '../../src/jsm/threejs/three.module';
-import {ColladaLoader} from '../../src/jsm/threejs/ColladaLoader';
-// import {FlyControls} from '../../src/jsm/threejs/FlyControls';
-// import Stats from '../../src/jsm/threejs/stats.module';
+import * as THREE from '../../threejs/three.module';
+import {ColladaLoader} from '../../threejs/ColladaLoader';
 
-import {params_setter, getRandomArbitrary, getRandomInt} from '../../src/jsm/utils_node';
-import {Buffer, BoxSpace} from '../../src/jsm/types_node';
-// import {MobileControls} from '../../src/jsm/controls';
+import {params_setter, getRandomArbitrary, getRandomInt} from '../../utils_node';
+import {Buffer, BoxSpace} from '../../types_node';
 
 var CONSTANTS = {
   "TYPES": {
@@ -449,23 +445,10 @@ export class HuntersWorld {
     this.Container = document.createElement("div");
     this.Container.id = "MainContainer";
     this.Container.classList.add("Container");
-    
     this.Renderer = new THREE.WebGLRenderer({
       context: GLOBAL.gl
     });
-    // this.Renderer.setSize(window.innerWidth, window.innerHeight);
-    // this.Container.appendChild(this.Renderer.domElement);
-
-    // document.body.insertBefore( this.Container, document.body.firstChild);
-
-    // this.stats = new Stats();
-    // document.body.appendChild(this.stats.dom);
-
     this.Camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
-
-
-
-    // window.addEventListener("resize", this.onWindowResize.bind(this), false);
 
     this.Camera.position.set(0,10, 10);
     this.Scene = new THREE.Scene();
@@ -523,16 +506,13 @@ export class HuntersWorld {
 
 
     render () {
-      // this.stats.update();
       
       this.Renderer.render(this.Scene, this.Camera);
       var delta = this.Clock.getDelta();
       
-      // this.Controls.update(delta);
       for (let el of this.bullets){
         el.update(delta);
         let it = this.controlBulletCollision(el, this.items);
-        // let it = 0;
         if(it){
           if(it.type === 1) this.agents[0].digestion_signal += it.reward;
           if(it.type === 2) this.agents[0].digestion_signal += it.reward;
@@ -545,7 +525,6 @@ export class HuntersWorld {
       }
     }
 
-    // helper function to get closest colliding walls/items
     computeCollisions(eye, check_walls, check_items) {
       let minres = false;
 

@@ -24,13 +24,6 @@
 <script>
 tf.disableDeprecationWarnings();
 
-// import {FlatAreaEatWorld_c, Agent as FlatAgent} from "./src/jsm/envs/FlatAreaWorld/FlatAreaEatWorld_c"
-// import {TestWorld_c, Agent as TestAgent} from "./src/jsm/envs/TestWorld/TestWorld_c"
-// import {HuntersWorld, Agent as HunterAgent} from "./src/jsm/envs/HuntersWorld/HuntersWorld"
-// import {HuntersWorld as HuntersWorld3D, Agent as HunterAgent3D} from "./src/jsm/envs/World3D/HuntersWorld3D"
-// import {build_full_connected}  from './src/jsm/neuralnetworks';
-// import {getWeightsFromModelToWorkerTransfer, setWeightsToModelByObject}  from './src/jsm/utils';
-// import {SimpleUI} from './src/jsm/ui/SimplePPOUI'
 let curretWorldClass = HuntersWorld3D;
 
 var PPOworker = new Worker("./src/js/agents/policy_gradients/ppo_class_worker.js");
@@ -40,7 +33,6 @@ let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.actio
 let weights_obj = getWeightsFromModelToWorkerTransfer(cur_nn);
 let ui = new SimpleUI({parent: document.body, policy_nn: cur_nn, worker: PPOworker});
 var w = new curretWorldClass({});
-//cur_nn = tf.loadLayersModel('http://localhost:1234/models/mymodel.json');
 w.addAgent(a);
 PPOworker.onmessage = function(e){
     if(e.data.msg_type === "step"){
