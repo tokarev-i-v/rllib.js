@@ -408,7 +408,7 @@ export class PPO{
         act_batch.dispose();
         adv_batch.dispose();
         rtg_batch.dispose();
-        createCheckpoint(this.policy_nn, "./models/PPO/", ep);
+        createCheckpoint(this.policy_nn, "./models/PPO_node/", ep);
         }
 
 
