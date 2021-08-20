@@ -4,6 +4,9 @@ It provides some reinforcement learning algorithms and environments.
 At this moment uses [TensorFlow.js](!https://github.com/tensorflow/tfjs) to implement functions and [three.js](!https://threejs.org/) for visualization.  
 [Live example](https://polyzer.github.io/rllib/build/ppo_web_worker.html)
  
+Visual library: [three.js](!https://threejs.org/)
+
+![](./readme/output.gif)
 
 ## Motivation
 **JavaScript** is a very popular programming language but JS developers have no instruments of RL.  
@@ -71,8 +74,11 @@ Discrete and continuous versions.
 * Actions: turns on specified angles.  
 * Space: Agent recieves signal from each eye that specifies type of saw item.  
 
+## Known issues:
+### Node.js
+[symbol lookup error on nVidia](https://github.com/stackgl/headless-gl/issues/65)
 
-
-Visual library: [three.js](!https://threejs.org/)
-
-![](./readme/output.gif)
+It could be helpful:
+```bash
+npm rebuild --build-from-source gl
+```

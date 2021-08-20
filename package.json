@@ -27,7 +27,6 @@
     "latest": "^0.2.0",
     "mocha": "^8.1.3",
     "moment": "^2.29.1",
-    "puppeteer": "^5.2.1",
     "src": "^1.1.2"
   },
   "scripts": {
@@ -39,8 +38,8 @@
     "ppo_node": "node -r esm ppo_node.js",
     "build": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --target browser --out-dir build --public-url ./",
     "test": "babel-node --inspect tests.js",
-    "lint": "eslint .",
-    "postinstall": "npm rebuild --build-from-source gl"
+    "lint": "eslint ."
+    // "postinstall": "npm rebuild --build-from-source gl"
   },
   "browser": {
     "crypto": false
