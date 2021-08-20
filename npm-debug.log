@@ -1,0 +1,45 @@
+0 info it worked if it ends with ok
+1 verbose cli [
+1 verbose cli   '/usr/local/bin/node',
+1 verbose cli   '/media/sheff/ADATAHD650/workspace/rllib.js/node_modules/.bin/npm',
+1 verbose cli   'run',
+1 verbose cli   'open_ppo_2d'
+1 verbose cli ]
+2 info using npm@2.15.12
+3 info using node@v12.18.3
+4 warn invalid config loglevel="notice"
+5 verbose run-script [ 'preopen_ppo_2d', 'open_ppo_2d', 'postopen_ppo_2d' ]
+6 info preopen_ppo_2d rllib.js@0.1.0
+7 info open_ppo_2d rllib.js@0.1.0
+8 verbose unsafe-perm in lifecycle true
+9 info rllib.js@0.1.0 Failed to exec open_ppo_2d script
+10 verbose stack Error: rllib.js@0.1.0 open_ppo_2d: `concurrently "http-server -a localhost -p 1234" "open http://localhost:1234/ppo-example-2d.html"`
+10 verbose stack spawn ENOENT
+10 verbose stack     at ChildProcess.<anonymous> (/media/sheff/ADATAHD650/workspace/rllib.js/node_modules/npm/lib/utils/spawn.js:17:16)
+10 verbose stack     at ChildProcess.emit (events.js:315:20)
+10 verbose stack     at maybeClose (internal/child_process.js:1021:16)
+10 verbose stack     at Process.ChildProcess._handle.onexit (internal/child_process.js:286:5)
+11 verbose pkgid rllib.js@0.1.0
+12 verbose cwd /media/sheff/ADATAHD650/workspace/rllib.js
+13 error Linux 5.4.0-77-generic
+14 error argv "/usr/local/bin/node" "/media/sheff/ADATAHD650/workspace/rllib.js/node_modules/.bin/npm" "run" "open_ppo_2d"
+15 error node v12.18.3
+16 error npm  v2.15.12
+17 error file sh
+18 error code ELIFECYCLE
+19 error errno ENOENT
+20 error syscall spawn
+21 error rllib.js@0.1.0 open_ppo_2d: `concurrently "http-server -a localhost -p 1234" "open http://localhost:1234/ppo-example-2d.html"`
+21 error spawn ENOENT
+22 error Failed at the rllib.js@0.1.0 open_ppo_2d script 'concurrently "http-server -a localhost -p 1234" "open http://localhost:1234/ppo-example-2d.html"'.
+22 error This is most likely a problem with the rllib.js package,
+22 error not with npm itself.
+22 error Tell the author that this fails on your system:
+22 error     concurrently "http-server -a localhost -p 1234" "open http://localhost:1234/ppo-example-2d.html"
+22 error You can get information on how to open an issue for this project with:
+22 error     npm bugs rllib.js
+22 error Or if that isn't available, you can get their info via:
+22 error
+22 error     npm owner ls rllib.js
+22 error There is likely additional logging output above.
+23 verbose exit [ 1, true ]

@@ -1,6 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
-import {params_setter} from '../utils';
-
+import {getWeightsFromModelToWorkerTransfer, params_setter}  from '../utils';
 export class SimpleUI{
     constructor(opt){
         this.params_setter = params_setter.bind(this);
@@ -15,6 +14,8 @@ export class SimpleUI{
         this.params_setter(default_options, opt);
         this.initDownloadWeightsButton();
         this.initSetWeightsButton();
+        this.initPolicyWeightsPathInput();
+        this.initValueWeightsPathInput();
         
     }
     
@@ -26,7 +27,7 @@ export class SimpleUI{
             this.downloadWeightsButton.style.top = "50px";
             this.downloadWeightsButton.style.width = "100px";
             this.downloadWeightsButton.style.height = "40px";            
-            this.downloadWeightsButton.id = "ppo_ui";
+            this.downloadWeightsButton.id = "ppo_ui_download_weights";
             this.downloadWeightsButton.style.zIndex = 10;
             this.downloadWeightsButton.style.position = 'absolute';
             this.downloadWeightsButton.textContent = this.download_weights_button_text;
@@ -45,10 +46,10 @@ export class SimpleUI{
             this.setWeightsButton = document.createElement("Button");
             this.setWeightsButton.addEventListener("click", this.setWeights.bind(this));
             this.setWeightsButton.style.left = "0px";
-            this.setWeightsButton.style.top = "100px";
+            this.setWeightsButton.style.top = "150px";
             this.setWeightsButton.style.width = "100px";
             this.setWeightsButton.style.height = "40px";            
-            this.setWeightsButton.id = "ppo_ui";
+            this.setWeightsButton.id = "ppo_ui_set_weights_button";
             this.setWeightsButton.style.zIndex = 10;
             this.setWeightsButton.style.position = 'absolute';
             this.setWeightsButton.textContent = this.set_weights_button_text;
@@ -62,8 +63,54 @@ export class SimpleUI{
         }
     }
 
+    initPolicyWeightsPathInput(){
+        if(document){
+            this.setWeightsButton = document.createElement("input");
+            this.setWeightsButton.type = "text";
+            this.setWeightsButton.style.left = "0px";
+            this.setWeightsButton.style.top = "100px";          
+            this.setWeightsButton.id = "ppo_ui_set_policy_weight_input";
+            this.setWeightsButton.style.zIndex = 10;
+            this.setWeightsButton.style.position = 'absolute';
+
+            if(this.parent){
+                this.parent.appendChild(this.setWeightsButton);
+            } else {
+                document.body.appendChild(this.setWeightsButton);
+                this.parent = document.body;
+            }
+        }
+    }
+
+    initValueWeightsPathInput(){
+        if(document){
+            this.setWeightsButton = document.createElement("input");
+            this.setWeightsButton.type = "text";
+            this.setWeightsButton.style.left = "0px";
+            this.setWeightsButton.style.top = "130px";          
+            this.setWeightsButton.id = "ppo_ui_set_value_weight_input";
+            this.setWeightsButton.style.zIndex = 10;
+            this.setWeightsButton.style.position = 'absolute';
+
+            if(this.parent){
+                this.parent.appendChild(this.setWeightsButton);
+            } else {
+                document.body.appendChild(this.setWeightsButton);
+                this.parent = document.body;
+            }
+        }
+    }
+
+
     setWeights(){
-        this.policy_nn = tf.loadLayersModel('http://localhost:1234/models/mymodel.json');    
+        let policy_path = window.location.origin + "/" + this.policyWeightsPath.value;
+        let value_path = window.location.origin + "/" + this.valueWeightsPath.value;
+        this.policy_nn = tf.loadLayersModel(policy_path);    
+        this.worker.postMessage({
+            msg_type: "load_weigths_by_path",
+            policy_weights_path: policy_path,
+            value_weights_path: value_path,
+        });
     }
 
     downloadWeights(){

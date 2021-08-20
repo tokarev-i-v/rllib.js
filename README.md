@@ -1,8 +1,20 @@
 # rllib.js
 Reinforcement learning library with JavaScript.  
-This library provides some reinforcement learning algorithms and environments.  
+It provides some reinforcement learning algorithms and environments.  
 At this moment uses [TensorFlow.js](!https://github.com/tensorflow/tfjs) to implement functions and [three.js](!https://threejs.org/) for visualization.  
-Live example: https://polyzer.github.io/rllib/build/ppo_web_worker.html
+[Live example](https://polyzer.github.io/rllib/build/ppo_web_worker.html)
+ 
+Visual library: [three.js](!https://threejs.org/)
+
+![](./readme/output.gif)
+
+## Motivation
+**JavaScript** is a very popular programming language but JS developers have no instruments of RL.  
+This library was created to correct the situation.
+Web game makers can use it to train game bots in 2D and 3D environments.  
+Other can find it useful to make experiments.  
+
+Unity developers can use ML methods with [ml-agents](https://github.com/Unity-Technologies/ml-agents)
 
 ## Install and start example
 Starting example:
@@ -11,14 +23,14 @@ Starting example:
 ```bash
 git clone https://github.com/polyzer/rllib.js.git  
 npm i   
-npm run ppo
+npm run ppo_2d
 ```
 
 ### Windows  
 ```bash
 git clone https://github.com/polyzer/rllib.js.git  
 npm i   
-npm run ppo
+npm run ppo_2d
 ```
 There, please follow in:
 ```bash
@@ -33,6 +45,13 @@ to
 var PPOworker = new Worker("/agents/policy_gradients/ppo_worker.js");
 ```  
 [this issue](https://github.com/parcel-bundler/parcel/issues/1990)
+
+### Node.js
+You can start Node.js example with:
+```bash
+npm run ppo_node
+```
+
 
 ## Algorithms:  
 Deep Q-learning:  
@@ -55,6 +74,11 @@ Discrete and continuous versions.
 * Actions: turns on specified angles.  
 * Space: Agent recieves signal from each eye that specifies type of saw item.  
 
-Visual library: [three.js](!https://threejs.org/)
+## Known issues:
+### Node.js
+[symbol lookup error on nVidia](https://github.com/stackgl/headless-gl/issues/65)
 
-![](./readme/output.gif)
+It could be helpful:
+```bash
+npm rebuild --build-from-source gl
+```
