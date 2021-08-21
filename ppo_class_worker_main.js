@@ -10,7 +10,7 @@ import {get_serialized_layers_data, create_model_by_serialized_data}  from './sr
 import {SimpleUI} from './src/jsm/ui/SimplePPOUI'
 let curretWorldClass = HuntersWorld3D;
 
-var PPOworker = new Worker("./src/jsm/agents/policy_gradients/ppo_class_worker.js");
+var PPOworker = new Worker(new URL('./src/jsm/agents/policy_gradients/ppo_class_worker.js', import.meta.url), {type: 'module'});
 
 var a = new HunterAgent3D({eyes_count: 10});
 let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.action_space.shape, 'tanh', 'tanh');
