@@ -1,3 +1,8 @@
+/**
+ * We need to create gl context.
+ * And set gl.canvas object with 'width', 'height' properties.
+ * headless-gl used by three.js.
+ */
 GLOBAL.gl = require('gl')(1,1); //headless-gl
 GLOBAL.gl.canvas = {
   "width": 1,
@@ -7,10 +12,10 @@ import moment from 'moment';
 import fs from 'fs'
 import {Worker, workerData, MessageChannel} from 'worker_threads';
 import {JSDOM} from 'jsdom';
+/** Create DOM structure. */
 const jsdel =  new JSDOM(`<!DOCTYPE html><html><head></head><body>hello</body></html>`);
 global.window = jsdel.window;
 global.document = jsdel.window.document;
-// tf.disableDeprecationWarnings();
 
 import {HuntersWorld, Agent as HunterAgent} from "./src/jsm/envs/HuntersWorld/HuntersWorld_node.js";
 import {build_full_connected}  from './src/jsm/neuralnetworks_node.js';
@@ -25,16 +30,18 @@ function runService(workerData) {
       var a = new HunterAgent({eyes_count: 10});
       let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.action_space.shape, 'tanh', 'tanh');
       let weights_obj = getWeightsFromModelToWorkerTransfer(cur_nn);
-      // let ui = new SimpleUI({parent: document.body, policy_nn: cur_nn, worker: PPOworker});
       var w = new curretWorldClass({});
-      //cur_nn = tf.loadLayersModel('http://localhost:1234/models/mymodel.json');
       w.addAgent(a);
       PPOworker.on('message', function(data){
           if(data.msg_type === "step"){
               var step_data = w.step(data.action);
-              // console.log("step data:", step_data);
-              PPOworker.postMessage({msg_type: "step", step_data: step_data, n_obs: w.n_obs, e_r: w.get_episode_reward(), e_l: w.get_episode_length()});
-              // resolve();
+              PPOworker.postMessage({
+                msg_type: "step", 
+                step_data: step_data, 
+                n_obs: w.n_obs, 
+                e_r: w.get_episode_reward(), 
+                e_l: w.get_episode_length()
+              });
           }
           if(data.msg_type === "get_policy_weights"){
               let curr_time_str = moment().format();
@@ -54,6 +61,7 @@ function runService(workerData) {
           reject(new Error(`Worker stopped with exit code ${code}`));
         }
       });
+      /*Starting training process*/
       PPOworker.postMessage({
         msg_type: "start",
         observation_space: a.observation_space,

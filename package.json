@@ -32,12 +32,12 @@
   },
   "scripts": {
     "dqn": "cross-env NODE_ENV=development parcel dqn.html --open",
-    "vr_env": "cross-env NODE_ENV=development parcel vr-env.html --open --no-hmr ",
-    "ppo_3d": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html src/jsm/agents/policy_gradients/ppo_class_worker.js --open",
-    "ppo_2d": "concurrently \"http-server -a localhost -p 8080\" \"open http://localhost:8080/ppo-example-2d.html\"",
-    "ppo_dense": "cross-env NODE_ENV=development parcel examples/ppo_dense_hunter_world_3d.html ./agents/policy_gradients/ppo_class_worker.js --open",
-    "ppo_node": "node -r esm ppo_node.js",
-    "build": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html src/jsm/agents/policy_gradients/ppo_class_worker.js --target browser --out-dir build --public-url ./",
+    "vr-env": "cross-env NODE_ENV=development parcel ppo-babylon-vr-env.html --open --no-hmr ",
+    "ppo-3d": "cross-env NODE_ENV=development parcel ppo-threejs-example-3d.html src/jsm/agents/policy_gradients/ppo_class_worker.js --open",
+    "ppo-2d": "concurrently \"http-server -a localhost -p 8080\" \"open http://localhost:8080/ppo-threejs-example-2d.html\"",
+    "ppo-dense": "cross-env NODE_ENV=development parcel examples/ppo_dense_hunter_world_3d.html ./agents/policy_gradients/ppo_class_worker.js --open",
+    "ppo-node": "node -r esm ppo-threejs-node.js",
+    "build": "cross-env NODE_ENV=development parcel ppo-example-3d.html src/jsm/agents/policy_gradients/ppo_class_worker.js --target browser --out-dir build --public-url ./",
     "test": "babel-node --inspect tests.js",
     "lint": "eslint ."
   },
