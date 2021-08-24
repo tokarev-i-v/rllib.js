@@ -1,4 +1,59 @@
-﻿﻿      //is there a helper function that shows the local xyz?
+﻿﻿/**
+ * @class Eye
+ * It presents as agent's eye detector.
+ */
+ class Eye{
+  /**
+   * 
+   * @param {THREE.Vector3} agent_pos_vec Vector that would use as src
+   * vector for raycastring
+   * @param {Number} alpha angle 
+   * @param {Number} r radius
+   */
+  constructor(a, alpha, r){
+ 
+    this.default_positions = [];
+    const colors = [];
+
+    this.default_positions.push(new BABYLON.Vector3(0, 0, 0 ));
+    this.default_positions.push(new BABYLON.Vector3(Math.sin(Math.PI*alpha/180)*r,0,  Math.cos(Math.PI*alpha/180)*r));
+    
+    this.max_range = 20;
+    this.sensed_proximity = 20;
+    this.a = a;
+    this._view = BABYLON.MeshBuilder.CreateLines("lines", {
+      points: this.default_positions,
+    });
+    this.vec_to_add = a._view.getDirection(new BABYLON.Vector3(0,0,1)).subtract(this.default_positions[1]);
+
+  }
+
+  get view(){
+    return this._view;
+  }
+
+  get_detection(params) {
+    
+    let origin = this.a._view.position;
+
+    let end_vec = this.a._view.forward.add(this.vec_to_add);
+
+
+    let scene = params.scene;
+    //here are the rays
+    let ray = new BABYLON.Ray(origin, end_vec, this.sensed_proximity);
+    
+    //hit detection and print out
+    let hit = scene.pickWithRay(ray);
+    if (hit.pickedMesh) {
+      console.log(hit.pickedMesh.id);
+    }
+
+  }
+}
+
+
+//is there a helper function that shows the local xyz?
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       class Agent {
         constructor(opt) {
@@ -15,11 +70,60 @@
           this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
           this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
           this.eyes = [];
+
+          let r = 20;
+          let dalpha = 10;
+          let alpha = -(dalpha*this.eyes_count)/2;          
+          
           this.reward_bonus = 0.0;
           this.digestion_signal = 0.0;
-          // outputs on world
-          this.rot = 0.0; // rotation speed of 1st wheel
-          this.speed = 0.0;
+
+          this.rot = 0.0; //rotation angle
+          this.speed = 0.0; // movement speed
+
+          this._view = new BABYLON.MeshBuilder.CreateBox(
+            "box",
+            { height: 1, width: 1, depth: 1 },
+            // this.scene
+          );
+          this._view.material = new BABYLON.StandardMaterial();
+          this._view.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0); 
+          this._view.position.y = 0;
+          this._view.isPickable = this.isPickable;
+
+          /**Now we create agent's eyes*/
+          for (let i = 0; i < this.eyes_count; i++){
+            let eye = new Eye(this, alpha, r);
+            let mesh = eye.view;
+            this.view.addChild(mesh);
+            this.eyes.push(eye);
+            alpha += dalpha;
+          }
+
+        }
+
+        get view(){
+          return this._view;
+        }
+        
+        set view(v){
+          this._view = v;
+        }
+
+        get position(){
+          return this._view.position;
+        }
+        
+        set position(pos){
+          this._view.position = pos;
+        }
+
+        get rotation(){
+          return this._view.rotation;
+        }
+
+        set rotation(rot){
+          this._view.rotation = rot;
         }
 
         get_observation() {
@@ -41,124 +145,26 @@
         
         onAdding(params){
           this.scene = params.scene;
-          this.body = new BABYLON.MeshBuilder.CreateBox(
+          this._view = new BABYLON.MeshBuilder.CreateBox(
             "box",
             { height: 1, width: 1, depth: 1 },
             this.scene
           );
-          this.body.material = new BABYLON.StandardMaterial(this.scene);
-          this.body.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0); 
-          this.body.position.y = 0;
-          this.body.isPickable = this.isPickable;
+          this._view.material = new BABYLON.StandardMaterial(this.scene);
+          this._view.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0); 
+          this._view.position.y = 0;
+          this._view.isPickable = this.isPickable;
         }
 
-        //one final test!
-        moveNorth() {
-          this.body.position.z = this.body.position.z + 0.1;
-        }
-        moveSouth() {
-          this.body.position.z = this.body.position.z - 0.1;
-        }
-        moveEast() {
-          this.body.position.x = this.body.position.x + 0.1;
-        }
-        moveWest() {
-          this.body.position.x = this.body.position.x - 0.1;
-        }
-        rotateRight() {
-          this.body.rotation.y = this.body.rotation.y + 0.01;
-        }
-        rotateLeft() {
-          this.body.rotation.y = this.body.rotation.y - 0.01;
-        }
         vecToLocal(vector, mesh) {
           var m = mesh.getWorldMatrix();
           var v = BABYLON.Vector3.TransformCoordinates(vector, m);
           return v;
         }
 
-        // createScene.scene
-        // divide it into smaller functions
-        // one responsibility or not?
-        castRay(arg) {
-          
-          
-          //const or let
-          //const if the variable will not be changed (const dies after the function is called)
-          //let, so they can be changed
-          // (var lives for a long period do not use as it causes memory leaks)
-                    
-          var origin = this.body.position;
-          var length = 10;
-          
-          const forward = this.body.getDirection(BABYLON.Vector3.Forward());
-          const left = this.body.getDirection(new BABYLON.Vector3(-1 * this.eye_view_radius, 0, 1));
-          const right = this.body.getDirection(new BABYLON.Vector3(this.eye_view_radius, 0, 1));
-          
-          //here are the rays
-          var ray = new BABYLON.Ray(origin, forward, length);
-          var rayTwo = new BABYLON.Ray(origin, left, length); 
-          var rayThree = new BABYLON.Ray(origin, right, length); 
-          //var rayThree = new BABYLON.Ray(origin, direction, length);
 
-          //here are the ray helpers & here we dispose them. 
-          if(this.rayHelper) {
-            this.rayHelper.dispose();
-          }
-
-          if(this.rayHelperTwo) {
-            this.rayHelperTwo.dispose();
-          }
-          
-          if(this.rayHelperThree) {
-            this.rayHelperThree.dispose();
-          }
-          
-          this.rayHelper = new BABYLON.RayHelper(ray);
-          this.rayHelperTwo = new BABYLON.RayHelper(rayTwo);
-          this.rayHelperThree = new BABYLON.RayHelper(rayThree);
-          //somehow these variables reverse the mouse direction...
-
-          //showing the rays with a ray helper
-          // this.rayHelper.attachToMesh(
-          //   this.body,            
-          //   forward,
-          //   this.body.localMeshOrigin,
-          //   length
-          // );
-          this.rayHelper.show(arg);
-
-          // this.rayHelperTwo.attachToMesh(
-          //   this.body,
-          //   left,
-          //   this.body.localMeshOrigin,
-          //   length
-          // );
-          this.rayHelperTwo.show(arg);
-          
-          // this.rayHelperThree.attachToMesh(
-          //   this.body,
-          //   right,
-          //   this.body.localMeshOrigin,
-          //   length
-          // );
-          this.rayHelperThree.show(arg);
-          
-          //hit detection and print out
-          var hit = arg.pickWithRay(ray);
-          if (hit.pickedMesh) {
-            console.log(hit.pickedMesh.id);
-          }
-          var hitTwo = arg.pickWithRay(rayTwo);
-          if (hitTwo.pickedMesh) {
-            console.log(hitTwo.pickedMesh.id);
-          }
-          var hitTwo = arg.pickWithRay(rayThree);
-          if (hitTwo.pickedMesh) {
-            console.log(hitTwo.pickedMesh.id);
-          }
-        }
       }
+
       class Apple {
         constructor(params) {
           this.body = BABYLON.MeshBuilder.CreateSphere("apple", {});
@@ -173,6 +179,7 @@
           this.body.material = this.appleMaterial;
         }
       }
+
       class Poison {
         constructor(params) {
           this.body = BABYLON.MeshBuilder.CreateBox("poison", {});
@@ -187,6 +194,7 @@
           this.body.material = this.poisonMaterial;
         }
       }
+
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       class BabylonjsVRExperimentWorld{
 
@@ -219,20 +227,6 @@
 
             this.engine.runRenderLoop(function() {
               if (this.sceneToRender) {
-                
-                //agent casts a ray
-                
-                //something here is resetting the position;
-                for (let agent of this.agents){
-                  agent.castRay(this.sceneToRender);
-                }
-                
-                
-                //these are MOVEMENT TESTS
-                //agent.moveNorth();
-                //agent.rotateRight();
-                
-                
                 this.sceneToRender.render();
               }
             }.bind(this));
@@ -244,6 +238,27 @@
             this.engine.resize();
           }.bind(this));
         }
+
+      // helper function to get closest colliding walls/items
+      computeCollisions(eye, check_walls, check_items) {
+        let minres = false;
+
+        if(check_walls) {
+            let res = eye.get_detection({scene: this.scene, walls: this.walls});
+            if(res) {
+              res.type = 0; // 0 is wall
+              if(!minres) { minres=res; }
+            }
+        }
+        // collide with items
+        if(check_items) {
+          let res = eye.get_detection({scene: this.sceneToRender, items: this.items});
+          if(res) {
+            if(!minres) { minres=res; }
+          }
+        }
+        return minres;
+      }
 
         /**
          * Updates graphics
@@ -277,11 +292,117 @@
           return ret;
         }
 
-        start() {
-          requestAnimationFrame(this.start.bind(this));
-          this.step();
-        }
+        tick(action) {
 
+          this.agents[0].rot = action[0];
+          this.agents[0].speed = action[1];  
+    
+          // if (action[2] > 0.5){
+          //   let bullet = this.agents[0].fire();
+          //   this.addBullet(bullet);
+          // }
+          if (this.need_reset_env){
+            this.reset();
+            this.need_reset_env = 0;
+          }
+          let state, done, reward;
+    
+          // tick the environment
+          this.clock++;
+          
+          for(var i=0,n=this.agents.length;i<n;i++) {
+            var a = this.agents[i];
+            for(var ei=0,ne=a.eyes.length;ei<ne;ei++) {
+              var e = a.eyes[ei];
+              var res = this.computeCollisions(e, true, true);
+              if(res) {
+                // eye collided with wall
+                e.sensed_proximity = res.dist;
+                e.sensed_type = res.type;
+              } else {
+                e.sensed_proximity = e.max_range;
+                e.sensed_type = -1;
+              }
+            }
+          }
+          let states = [];
+          // let the agents behave in the world based on their input
+          for(var i=0,n=this.agents.length;i<n;i++) {
+            states.push(this.agents[i].get_observation());
+          }
+          
+          // apply outputs of agents on evironment
+          for(let i=0,n=this.agents.length;i<n;i++) {
+            let a = this.agents[i];
+            let v = new BABYLON.Vector3(0, 0, 1);
+            a._view.getDirection(v);
+            v = v.normalize();
+            v = v.scale(a.speed);
+            a.position = a.position.add(v);
+            a.rotation.y += a.rot;
+            
+            let res = this.computeCollisions(a.frontEye, true, false);
+            if(res) {
+              a.position = a.op;
+            }
+            
+            // handle boundary conditions
+            if(a.position.x< -this.W/2)a.position.x=-this.W/2;
+            if(a.position.x>this.W/2)a.position.x=this.W/2;
+            if(a.position.z< -this.H/2)a.position.z=-this.H/2;
+            if(a.position.z>this.H/2)a.position.z=this.H/2;
+          }
+          
+          for(var i=0,n=this.items.length;i<n;i++) {
+            var it = this.items[i];
+            it.age += 1;
+            
+            // see if some agent gets lunch
+            for(var j=0,m=this.agents.length;j<m;j++) {
+              var a = this.agents[j];
+              var d = a.position.distanceTo(it.position);
+              if(d < it.rad + a.rad) {
+                
+                var rescheck = this.computeCollisions(a.frontEye, true, false);
+                if(!rescheck) { 
+                  if(it.type === 1) a.digestion_signal += it.reward;
+                  if(it.type === 2) a.digestion_signal += it.reward;
+                  this.removeItem(it);
+                  i--;
+                  n--;
+                  break; // break out of loop, item was consumed
+                }
+              }
+            }
+            
+            if(it.age > 5000 && this.clock % 100 === 0 && getRandomArbitrary(0,1)<0.1) {
+              this.removeItem(it);
+              i--;
+              n--;
+            }
+          }
+          if(this.items.length < this.items_count) {
+            this.generateItem();
+          }
+          let rewards = [];
+          for(var i=0,n=this.agents.length;i<n;i++) {
+            rewards.push(this.agents[i].get_reward());
+          }
+          done = 0;
+    
+          state = states[0];
+          reward = rewards[0];
+          let info = {};
+          
+          // reward -= this.clock;
+          let ret_data = [state, reward, done, info];
+          if(this.clock % 1000 == 0){
+            done = true;
+            ret_data[2] = done;
+            this.need_reset_env = 1;
+          }
+          return ret_data; 
+        }
         
         async createScene() {
           // This creates a basic Babylon Scene object (non-mesh)

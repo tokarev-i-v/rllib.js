@@ -437,14 +437,15 @@ class HuntersWorld {
      * generates food and poison
      */
     generateItem(){
-      var x = getRandomArbitrary(-this.W, this.W);
-      var y = getRandomArbitrary(-this.H, this.H);
-      var t = getRandomInt(1, 3); // food or poison (1 and 2)
+      let x = getRandomArbitrary(-this.W, this.W);
+      let y = getRandomArbitrary(-this.H, this.H);
+      let t = getRandomInt(1, 3); // food or poison (1 and 2)
+      let it = null;
       if (t == 1){
-        var it = new Food(new THREE.Vector3(x, 1, y));
+        it = new Food(new THREE.Vector3(x, 1, y));
       }
       else{
-        var it = new Poison(new THREE.Vector3(x, 1, y));
+        it = new Poison(new THREE.Vector3(x, 1, y));
       }
       this.items.push(it);
       this.Scene.add(it.view);
@@ -558,7 +559,7 @@ class HuntersWorld {
       this.stats.update();
       
       this.Renderer.render(this.Scene, this.Camera);
-      var delta = this.Clock.getDelta();
+      let delta = this.Clock.getDelta();
       
       this.Controls.update(delta);
       for (let el of this.bullets){
@@ -609,12 +610,6 @@ class HuntersWorld {
       return ret;
     }
 
-
-    start() {
-      requestAnimationFrame(this.start.bind(this));
-      this.step();
-    }
-
     addBullet(bullet){
       this.bullets.push(bullet);
       this.Scene.add(bullet.view);
@@ -643,14 +638,11 @@ class HuntersWorld {
       // tick the environment
       this.clock++;
       
-      // fix input to all agents based on environment
-      // process eyes
-      this.collpoints = [];
-      for(var i=0,n=this.agents.length;i<n;i++) {
-        var a = this.agents[i];
-        for(var ei=0,ne=a.eyes.length;ei<ne;ei++) {
-          var e = a.eyes[ei];
-          var res = this.computeCollisions(e, true, true);
+      for(let i=0,n=this.agents.length;i<n;i++) {
+        let a = this.agents[i];
+        for(let ei=0,ne=a.eyes.length;ei<ne;ei++) {
+          let e = a.eyes[ei];
+          let res = this.computeCollisions(e, true, true);
           if(res) {
             // eye collided with wall
             e.sensed_proximity = res.dist;
@@ -663,22 +655,22 @@ class HuntersWorld {
       }
       let states = [];
       // let the agents behave in the world based on their input
-      for(var i=0,n=this.agents.length;i<n;i++) {
+      for(let i=0,n=this.agents.length;i<n;i++) {
         states.push(this.agents[i].get_observation());
       }
       
       // apply outputs of agents on evironment
-      for(var i=0,n=this.agents.length;i<n;i++) {
-        var a = this.agents[i];
+      for(let i=0,n=this.agents.length;i<n;i++) {
+        let a = this.agents[i];
         // var v = a.position.clone();
-        var v = new THREE.Vector3();
+        let v = new THREE.Vector3();
         a._view.getWorldDirection(v);
         v.normalize();
         v.multiplyScalar(a.speed);
         a.position.add(v);
         a.rotation.y += a.rot;
         
-        var res = this.computeCollisions(a.frontEye, true, false);
+        let res = this.computeCollisions(a.frontEye, true, false);
         if(res) {
           a.position = a.op;
         }
