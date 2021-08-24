@@ -1,23 +1,20 @@
 ﻿﻿      //is there a helper function that shows the local xyz?
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       class Agent {
-        constructor(params) {
-          this.scene = params.scene;
-          this.body = new BABYLON.MeshBuilder.CreateBox(
-            "box",
-            { height: 1, width: 1, depth: 1 },
-            this.scene
-          );
+        constructor(opt) {
+          this.isPickable = false;
+          this.eye_view_radius = 2;
+
           //saving references allows us to dispose the ray helpers once we create new ones. Not disposing caused the multiple rays being attached to the mesh.
           this.rayHelper;
           this.rayHelperTwo;
-          this.rayHelperThree;
-          this.body.position.y = 0;
-          this.sideRaysRadius = 0.5;
-          this.body.material = new BABYLON.StandardMaterial(this.scene);
-          this.body.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0);     
-          
-          
+          this.rayHelperThree;   
+
+          this.eyes_count = opt.eyes_count;
+
+          this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
+          this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
+          this.eyes = [];
           this.reward_bonus = 0.0;
           this.digestion_signal = 0.0;
           // outputs on world
@@ -42,6 +39,19 @@
           return obs;
         }
         
+        onAdding(params){
+          this.scene = params.scene;
+          this.body = new BABYLON.MeshBuilder.CreateBox(
+            "box",
+            { height: 1, width: 1, depth: 1 },
+            this.scene
+          );
+          this.body.material = new BABYLON.StandardMaterial(this.scene);
+          this.body.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0); 
+          this.body.position.y = 0;
+          this.body.isPickable = this.isPickable;
+        }
+
         //one final test!
         moveNorth() {
           this.body.position.z = this.body.position.z + 0.1;
@@ -82,8 +92,8 @@
           var length = 10;
           
           const forward = this.body.getDirection(BABYLON.Vector3.Forward());
-          const left = this.body.getDirection(new BABYLON.Vector3(-1 * this.sideRaysRadius, 0, 1));
-          const right = this.body.getDirection(new BABYLON.Vector3(this.sideRaysRadius, 0, 1));
+          const left = this.body.getDirection(new BABYLON.Vector3(-1 * this.eye_view_radius, 0, 1));
+          const right = this.body.getDirection(new BABYLON.Vector3(this.eye_view_radius, 0, 1));
           
           //here are the rays
           var ray = new BABYLON.Ray(origin, forward, length);
@@ -213,7 +223,9 @@
                 //agent casts a ray
                 
                 //something here is resetting the position;
-                this.agent.castRay(this.sceneToRender);
+                for (let agent of this.agents){
+                  agent.castRay(this.sceneToRender);
+                }
                 
                 
                 //these are MOVEMENT TESTS
@@ -252,6 +264,25 @@
           });
         };
 
+        addAgent(agent){
+          agent.onAdding({scene: this.scene});
+          this.agents.push(agent);
+          this.n_obs = agent.get_observation();
+        };
+
+        step(action) {
+          let ret = this.tick(action);
+          this.rew_episode += ret[1];
+          this.len_episode += 1;
+          return ret;
+        }
+
+        start() {
+          requestAnimationFrame(this.start.bind(this));
+          this.step();
+        }
+
+        
         async createScene() {
           // This creates a basic Babylon Scene object (non-mesh)
           this.scene = new BABYLON.Scene(this.engine);
@@ -314,22 +345,24 @@
           groundMaterial.opacity = 0.98;
           ground.material = groundMaterial; //new BABYLON.GridMaterial("mat", scene);
   
+          this.agents = [];
+
           //AGENT INITIALIZATION
-          this.agent = new Agent({"scene": this.scene});
-          this.agent.body.isPickable = false;
+          // this.agent = new Agent({"scene": this.scene});
+          // this.agent.body.isPickable = false;
   
           //this is a helper to debug agent motion
-          this.mousemovef = function() {
-            var pickResult = this.scene.pick(this.scene.pointerX, this.scene.pointerY);
-            if (pickResult.hit) {
-              var diffX = pickResult.pickedPoint.x - this.agent.body.position.x;
-              var diffY = pickResult.pickedPoint.z - this.agent.body.position.z;
-              this.agent.body.rotation.y = Math.atan2(diffX, diffY);
-            }
-          }
-          this.scene.onPointerMove = function() {
-            this.mousemovef();
-          }.bind(this);
+          // this.mousemovef = function() {
+          //   var pickResult = this.scene.pick(this.scene.pointerX, this.scene.pointerY);
+          //   if (pickResult.hit) {
+          //     var diffX = pickResult.pickedPoint.x - this.agent.body.position.x;
+          //     var diffY = pickResult.pickedPoint.z - this.agent.body.position.z;
+          //     this.agent.body.rotation.y = Math.atan2(diffX, diffY);
+          //   }
+          // }
+          // this.scene.onPointerMove = function() {
+          //   this.mousemovef();
+          // }.bind(this);
           //making available to global scope for update
           //scene.ray = castRay;
   

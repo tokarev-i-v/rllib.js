@@ -17,6 +17,7 @@
     "@tensorflow/tfjs-vis": "^1.5.1",
     "babel-node": "^0.0.1-security",
     "chai": "^4.2.0",
+    "concurrently": "^6.2.1",
     "dat.gui": "^0.7.7",
     "esm": "^3.2.25",
     "express": "^4.17.1",
@@ -32,7 +33,7 @@
   },
   "scripts": {
     "dqn": "cross-env NODE_ENV=development parcel dqn.html --open",
-    "vr-env": "cross-env NODE_ENV=development parcel ppo-babylon-vr-env.html --open --no-hmr ",
+    "vr-env": "concurrently \"http-server -a localhost -p 8080\" \"open http://localhost:8080/ppo-babylon-vr-env.html\"",
     "ppo-3d": "cross-env NODE_ENV=development parcel ppo-threejs-example-3d.html src/jsm/agents/policy_gradients/ppo_class_worker.js --open",
     "ppo-2d": "concurrently \"http-server -a localhost -p 8080\" \"open http://localhost:8080/ppo-threejs-example-2d.html\"",
     "ppo-dense": "cross-env NODE_ENV=development parcel examples/ppo_dense_hunter_world_3d.html ./agents/policy_gradients/ppo_class_worker.js --open",

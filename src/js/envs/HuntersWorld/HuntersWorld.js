@@ -178,7 +178,7 @@ class Agent{
       this.view.add(eye.sphere_point);
       this.eyes.push(eye);
       alpha += dalpha;
-  }
+    }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
       this._frontEye = this.eyes[Math.round(this.eyes.length/2)];
@@ -569,7 +569,7 @@ class HuntersWorld {
           if(it.type === 2) this.agents[0].digestion_signal += it.reward;
           this.removeItem(it);
           this.removeBullet(el);
-        }else if (el.way.length() > 20){
+        } else if (el.way.length() > 20){
           this.removeBullet(el);
           this.agents[0].digestion_signal += -10;
         }
