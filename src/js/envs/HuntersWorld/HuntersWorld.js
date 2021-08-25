@@ -5,7 +5,7 @@
  *  --type: continuous;
  */
 
-var CONSTANTS = {
+let CONSTANTS = {
   "TYPES": {
     "BULLET": 0,
     "POISON": 1,
@@ -247,9 +247,9 @@ class Agent{
 
   get_reward() {
     // compute reward 
-    var proximity_reward = 0.0;
-    var num_eyes = this.eyes.length;
-    for(var i=0;i<num_eyes;i++) {
+    let proximity_reward = 0.0;
+    let num_eyes = this.eyes.length;
+    for(let i=0;i<num_eyes;i++) {
       var e = this.eyes[i];
       // Here could be
       // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
@@ -260,13 +260,13 @@ class Agent{
     proximity_reward = proximity_reward/num_eyes;
     
     // agents like to go straight forward
-    var forward_reward = 0.0;
+    let forward_reward = 0.0;
     if(this.actionix === 0 && proximity_reward > 0.75) forward_reward = 0.1 * proximity_reward;
     
     // agents like to eat good things
-    var digestion_reward = this.digestion_signal;
+    let digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
-    var reward = proximity_reward + forward_reward + digestion_reward;   
+    let reward = proximity_reward + forward_reward + digestion_reward;   
     this.average_reward_window.add(reward);
     return reward;
   }
@@ -662,7 +662,6 @@ class HuntersWorld {
       // apply outputs of agents on evironment
       for(let i=0,n=this.agents.length;i<n;i++) {
         let a = this.agents[i];
-        // var v = a.position.clone();
         let v = new THREE.Vector3();
         a._view.getWorldDirection(v);
         v.normalize();
@@ -682,17 +681,17 @@ class HuntersWorld {
         if(a.position.z>this.H/2)a.position.z=this.H/2;
       }
       
-      for(var i=0,n=this.items.length;i<n;i++) {
-        var it = this.items[i];
+      for(let i=0,n=this.items.length;i<n;i++) {
+        let it = this.items[i];
         it.age += 1;
         
         // see if some agent gets lunch
-        for(var j=0,m=this.agents.length;j<m;j++) {
-          var a = this.agents[j];
-          var d = a.position.distanceTo(it.position);
+        for(let j=0,m=this.agents.length;j<m;j++) {
+          let a = this.agents[j];
+          let d = a.position.distanceTo(it.position);
           if(d < it.rad + a.rad) {
             
-            var rescheck = this.computeCollisions(a.frontEye, true, false);
+            let rescheck = this.computeCollisions(a.frontEye, true, false);
             if(!rescheck) { 
               if(it.type === 1) a.digestion_signal += it.reward;
               if(it.type === 2) a.digestion_signal += it.reward;
@@ -714,7 +713,7 @@ class HuntersWorld {
         this.generateItem();
       }
       let rewards = [];
-      for(var i=0,n=this.agents.length;i<n;i++) {
+      for(let i=0,n=this.agents.length;i<n;i++) {
         rewards.push(this.agents[i].get_reward());
       }
       done = 0;

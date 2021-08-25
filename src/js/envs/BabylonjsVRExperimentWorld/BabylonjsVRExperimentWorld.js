@@ -45,9 +45,9 @@
     
     //hit detection and print out
     let hit = scene.pickWithRay(ray);
-    if (hit.pickedMesh) {
-      console.log(hit.pickedMesh.id);
-    }
+    // if (hit.pickedMesh) {
+    //   console.log(hit.pickedMesh.id);
+    // }
 
   }
 }
@@ -99,7 +99,22 @@
             this.eyes.push(eye);
             alpha += dalpha;
           }
-
+          this._frontEye = null;
+          if(this.eyes.length % 2 === 0){
+            this._frontEye = this.eyes[Math.round(this.eyes.length/2)];
+          }else {
+            this._frontEye = this.eyes[Math.round(this.eyes.length/2)-1];
+          }
+    
+          this.reward_bonus = 0.0;
+          this.digestion_signal = 0.0;
+          // outputs on world
+          this.rot = 0.0; // rotation speed of 1st wheel
+          this.speed = 0.0;
+          this.average_reward_window = new Buffer(10, 1000);
+          this.displayHistoryData = [];
+          this.surface = { name: 'Mean reward', tab: 'Charts' };
+          setInterval(this.graphic_vis.bind(this), 1000);
         }
 
         get view(){
@@ -125,7 +140,26 @@
         set rotation(rot){
           this._view.rotation = rot;
         }
-
+        get angle(){
+          return this._view.rotation.z;
+        }
+        set angle(val){
+          this._view.rotation.z = val;
+        }
+        get frontEye(){
+          return this._frontEye;
+        }
+        /**
+         * Updates graphics
+         */
+        graphic_vis(){
+          if (this.displayHistoryData.length > 1100){
+            this.displayHistoryData.splice(0,100);
+          }
+          this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
+          let data = {values: this.displayHistoryData};
+          tfvis.render.linechart(this.surface, data);
+        }
         get_observation() {
           let num_eyes = this.eyes.length;
           let obs = new Array(num_eyes * 3);
@@ -143,6 +177,33 @@
           return obs;
         }
         
+        get_reward() {
+          // compute reward 
+          let proximity_reward = 0.0;
+          let num_eyes = this.eyes.length;
+          for(let i=0;i<num_eyes;i++) {
+            var e = this.eyes[i];
+            // Here could be
+            // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
+            // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
+            // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
+          }
+          // console.log("num_eyes: %s ", num_eyes);    
+          proximity_reward = proximity_reward/num_eyes;
+          
+          // agents like to go straight forward
+          let forward_reward = 0.0;
+          if(this.actionix === 0 && proximity_reward > 0.75) forward_reward = 0.1 * proximity_reward;
+          
+          // agents like to eat good things
+          let digestion_reward = this.digestion_signal;
+          this.digestion_signal = 0.0;
+          let reward = proximity_reward + forward_reward + digestion_reward;   
+          this.average_reward_window.add(reward);
+          return reward;
+        }
+      
+
         onAdding(params){
           this.scene = params.scene;
           this._view = new BABYLON.MeshBuilder.CreateBox(
@@ -178,6 +239,12 @@
           this.appleMaterial.emissiveColor = new BABYLON.Color3(0, 0, 1);
           this.body.material = this.appleMaterial;
         }
+        get position(){
+          return this.body.position;
+        }
+        set position(pos){
+          this.body.position = pos;
+        }
       }
 
       class Poison {
@@ -192,6 +259,12 @@
           this.reward = -70;
           this.poisonMaterial.emissiveColor = new BABYLON.Color3(1, 0, 0);
           this.body.material = this.poisonMaterial;
+        }
+        get position(){
+          return this.body.position;
+        }
+        set position(pos){
+          this.body.position = pos;
         }
       }
 
@@ -210,8 +283,7 @@
           this.sceneToRender = null;
           this.xr;
           this.xrCamera;
-          //agent
-          this.agent;
+          this.agents = [];
           try {
             this.engine = this.createDefaultEngine(this.canvas);
           } catch (e) {
@@ -360,7 +432,7 @@
             // see if some agent gets lunch
             for(var j=0,m=this.agents.length;j<m;j++) {
               var a = this.agents[j];
-              var d = a.position.distanceTo(it.position);
+              var d = BABYLON.Vector3.Distance(a.position, it.position);
               if(d < it.rad + a.rad) {
                 
                 var rescheck = this.computeCollisions(a.frontEye, true, false);
@@ -404,6 +476,24 @@
           return ret_data; 
         }
         
+
+
+        reset(){
+          this.n_obs = this.agents[0].get_observation();
+          this.rew_episode = 0;
+          this.len_episode = 0;
+          this.clock = 0;
+          return this.n_obs.slice()
+        }
+  
+        get_episode_reward(){
+          return this.rew_episode;
+        }
+    
+        get_episode_length(){
+          return this.len_episode;
+        }
+
         async createScene() {
           // This creates a basic Babylon Scene object (non-mesh)
           this.scene = new BABYLON.Scene(this.engine);
@@ -465,30 +555,9 @@
           groundMaterial.lineColor = new BABYLON.Color3(1.0, 1.0, 1.0);
           groundMaterial.opacity = 0.98;
           ground.material = groundMaterial; //new BABYLON.GridMaterial("mat", scene);
-  
-          this.agents = [];
+    
+          this.items = [];
 
-          //AGENT INITIALIZATION
-          // this.agent = new Agent({"scene": this.scene});
-          // this.agent.body.isPickable = false;
-  
-          //this is a helper to debug agent motion
-          // this.mousemovef = function() {
-          //   var pickResult = this.scene.pick(this.scene.pointerX, this.scene.pointerY);
-          //   if (pickResult.hit) {
-          //     var diffX = pickResult.pickedPoint.x - this.agent.body.position.x;
-          //     var diffY = pickResult.pickedPoint.z - this.agent.body.position.z;
-          //     this.agent.body.rotation.y = Math.atan2(diffX, diffY);
-          //   }
-          // }
-          // this.scene.onPointerMove = function() {
-          //   this.mousemovef();
-          // }.bind(this);
-          //making available to global scope for update
-          //scene.ray = castRay;
-  
-          //////////
-  
           //FRUITS AND POISONS INITIALIZATION
           for (var i = 0; i < 10; i++) {
             const flips = [-1, 1];
@@ -498,6 +567,7 @@
             var randomX = Math.random() * 50 * randomFlip(flips);
             var randomZ = Math.random() * 50 * randomFlip(flips);
             var apple = new Apple({"x": randomX, "z": randomZ, "scene": this.scene});
+            this.items.push(apple);
           }
           for (var i = 0; i < 10; i++) {
             const flips = [-1, 1];
@@ -507,6 +577,7 @@
             var randomX = Math.random() * 50 * randomFlip(flips);
             var randomZ = Math.random() * 50 * randomFlip(flips);
             var poison = new Poison({"x": randomX, "z": randomZ, "scene": this.scene});
+            this.items.push(poison);
           }
   
           // enable xr
