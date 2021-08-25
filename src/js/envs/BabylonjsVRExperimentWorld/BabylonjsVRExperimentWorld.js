@@ -84,7 +84,6 @@
           this._view = new BABYLON.MeshBuilder.CreateBox(
             "box",
             { height: 1, width: 1, depth: 1 },
-            // this.scene
           );
           this._view.material = new BABYLON.StandardMaterial();
           this._view.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0); 
@@ -206,15 +205,6 @@
 
         onAdding(params){
           this.scene = params.scene;
-          this._view = new BABYLON.MeshBuilder.CreateBox(
-            "box",
-            { height: 1, width: 1, depth: 1 },
-            this.scene
-          );
-          this._view.material = new BABYLON.StandardMaterial(this.scene);
-          this._view.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0); 
-          this._view.position.y = 0;
-          this._view.isPickable = this.isPickable;
         }
 
         vecToLocal(vector, mesh) {
@@ -273,17 +263,29 @@
 
         constructor(opt){
 
-          this.average_reward_window = new Buffer(10, 1000);
-          this.displayHistoryData = [];
-          this.surface = { name: 'Mean reward', tab: 'Charts' };
-          setInterval(this.graphic_vis.bind(this), 1000);
+          this._default_params = {
+            "items_count": 500,
+            "W": 80,
+            "H": 80,
+            "algorithm": null,
+            "UI": null
+          };
+
           this.canvas = document.getElementById("renderCanvas");
           this.engine = null;
           this.scene = null;
           this.sceneToRender = null;
           this.xr;
           this.xrCamera;
+          this.clock = 0;
           this.agents = [];
+
+          this.rew_episode = 0;
+          this.len_episode = 0;
+          this.need_reset_env = 0;
+          this.bullets = [];
+
+
           try {
             this.engine = this.createDefaultEngine(this.canvas);
           } catch (e) {
@@ -407,7 +409,7 @@
           for(let i=0,n=this.agents.length;i<n;i++) {
             let a = this.agents[i];
             let v = new BABYLON.Vector3(0, 0, 1);
-            a._view.getDirection(v);
+            v = a.view.getDirection(v);
             v = v.normalize();
             v = v.scale(a.speed);
             a.position = a.position.add(v);
