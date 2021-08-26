@@ -63,6 +63,7 @@
         constructor(opt) {
           this.isPickable = false;
           this.eye_view_radius = 20;
+          this.eat_radius = 1;
 
           //saving references allows us to dispose the ray helpers once we create new ones. Not disposing caused the multiple rays being attached to the mesh.
           this.rayHelper;
@@ -86,7 +87,7 @@
 
           this._view = new BABYLON.MeshBuilder.CreateBox(
             "box",
-            { height: 1.0, width: 1.0, depth: 1.0},
+            { height: this.eat_radius, width: this.eat_radius, depth: this.eat_radius},
           );
           this._view.material = new BABYLON.StandardMaterial();
           this._view.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0); 
@@ -222,6 +223,7 @@
       class Food {
         constructor(params) {
           this._view = BABYLON.MeshBuilder.CreateSphere("apple", {});
+          this.eat_radius = 1;
           this._view.position = params.position;
           this.material = new BABYLON.StandardMaterial(
             "myMaterial",
@@ -246,6 +248,14 @@
         set position(pos){
           this._view.position = pos;
         }
+
+        get view(){
+          return this._view;
+        }
+        set view(v){
+          return this._view = v;
+        }
+
       }
 
       class Poison {
@@ -256,6 +266,7 @@
             "myMaterial",
             params.scene
           );
+          this.eat_radius = 1;
           this.reward = -70;
           this.material.emissiveColor = new BABYLON.Color3(1, 0, 0);
           this._view.material = this.material;
@@ -277,6 +288,13 @@
         set position(pos){
           this._view.position = pos;
         }
+
+        get view(){
+          return this._view;
+        }
+        set view(v){
+          return this._view = v;
+        }        
       }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -389,6 +407,11 @@
           return ret;
         }
 
+        removeItem(it){
+          it.view.dispose();
+          this.items.splice(this.items.indexOf(it), 1);
+        }
+
         tick(action) {
 
           this.agents[0].rot = action[0];
@@ -407,15 +430,25 @@
           // tick the environment
           this.clock++;
           
-          for(var i=0,n=this.agents.length;i<n;i++) {
-            var a = this.agents[i];
-            for(var ei=0,ne=a.eyes.length;ei<ne;ei++) {
-              var e = a.eyes[ei];
-              var res = this.computeCollisions(e, true, true);
+          for(let i=0,n=this.agents.length;i<n;i++) {
+            let agent = this.agents[i];
+            for(let ei=0, ne=agent.eyes.length; ei<ne; ei++) {
+              let e = agent.eyes[ei];
+              let res = this.computeCollisions(e, true, true);
               if(res) {
-                // eye collided with wall
-                e.sensed_proximity = res.dist;
-                e.sensed_type = res.type;
+                /**if we eat this */
+                let item = res.obj._rl.obj
+                if (res.dist < agent.eat_radius + item.eat_radius){
+                  e.sensed_proximity = e.max_range;
+                  e.sensed_type = -1;        
+                  if(item.type === 1) agent.digestion_signal += item.reward;
+                  if(item.type === 2) agent.digestion_signal += item.reward;
+                  this.removeItem(item);
+                } else {
+                  // if we only see and can't eat
+                  e.sensed_proximity = res.dist;
+                  e.sensed_type = res.type;
+                }
               } else {
                 e.sensed_proximity = e.max_range;
                 e.sensed_type = -1;
@@ -438,8 +471,6 @@
             agent.position = agent.position.add(v);
             agent.rotation.y += agent.rot;
             
-            let res = this.computeCollisions(a.frontEye, true, false);
-            
             // handle boundary conditions
             if(agent.position.x< -this.W/2)agent.position.x=-this.W/2;
             if(agent.position.x>this.W/2)agent.position.x=this.W/2;
@@ -447,27 +478,10 @@
             if(agent.position.z>this.H/2)agent.position.z=this.H/2;
           }
           
-          for(var i=0,n=this.items.length;i<n;i++) {
-            var it = this.items[i];
+          for(let i=0,n=this.items.length;i<n;i++) {
+            let it = this.items[i];
             it.age += 1;
             
-            // see if some agent gets lunch
-            for(var j=0,m=this.agents.length;j<m;j++) {
-              var agent = this.agents[j];
-              var d = BABYLON.Vector3.Distance(agent.position, it.position);
-              if(d < it.rad + agent.rad) {
-                
-                var rescheck = this.computeCollisions(a.frontEye, true, false);
-                if(!rescheck) { 
-                  if(it.type === 1) agent.digestion_signal += it.reward;
-                  if(it.type === 2) agent.digestion_signal += it.reward;
-                  this.removeItem(it);
-                  i--;
-                  n--;
-                  break; // break out of loop, item was consumed
-                }
-              }
-            }
             
             if(it.age > 5000 && this.clock % 100 === 0 && getRandomArbitrary(0,1)<0.1) {
               this.removeItem(it);
