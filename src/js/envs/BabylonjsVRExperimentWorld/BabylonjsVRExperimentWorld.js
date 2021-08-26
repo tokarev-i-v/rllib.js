@@ -10,21 +10,24 @@
    * @param {Number} alpha angle 
    * @param {Number} r radius
    */
-  constructor(a, alpha, r){
+  constructor(params){
  
+    this.agent = params.agent;
+    let angle = params.angle;
+    let radius = params.radius;
     this.default_positions = [];
     const colors = [];
-
+  
     this.default_positions.push(new BABYLON.Vector3(0, 0, 0 ));
-    this.default_positions.push(new BABYLON.Vector3(Math.sin(Math.PI*alpha/180)*r,0,  Math.cos(Math.PI*alpha/180)*r));
+    this.default_positions.push(new BABYLON.Vector3(Math.sin(Math.PI*angle/180)*radius,0,  Math.cos(Math.PI*angle/180)*radius));
     
-    this.max_range = 20;
-    this.sensed_proximity = 20;
-    this.a = a;
+    this.max_range = radius;
+    this.sensed_proximity = radius;
     this._view = BABYLON.MeshBuilder.CreateLines("lines", {
       points: this.default_positions,
     });
-    this.vec_to_add = a._view.getDirection(new BABYLON.Vector3(0,0,1)).subtract(this.default_positions[1]);
+    this._view.isPickable = false;
+    this.vec_to_add = this.agent._view.getDirection(new BABYLON.Vector3(0,0,1)).subtract(this.default_positions[1]);
 
   }
 
@@ -34,10 +37,8 @@
 
   get_detection(params) {
     
-    let origin = this.a._view.position;
-
-    let end_vec = this.a._view.forward.add(this.vec_to_add);
-
+    let origin = this.agent._view.position;
+    let end_vec = this.agent._view.forward.add(this.vec_to_add);
 
     let scene = params.scene;
     //here are the rays
@@ -45,10 +46,13 @@
     
     //hit detection and print out
     let hit = scene.pickWithRay(ray);
-    // if (hit.pickedMesh) {
-    //   console.log(hit.pickedMesh.id);
-    // }
-
+    if (hit.pickedMesh && hit.distance < this.max_range) {
+      console.log(hit.pickedMesh.id);
+      // intersects[0].object.material.color.setHex( 0x0000ff );
+      return {obj: hit.pickedMesh, type: hit.pickedMesh._rl.type, dist: hit.distance}
+    } else {
+      return null;
+    }
   }
 }
 
@@ -58,7 +62,7 @@
       class Agent {
         constructor(opt) {
           this.isPickable = false;
-          this.eye_view_radius = 2;
+          this.eye_view_radius = 20;
 
           //saving references allows us to dispose the ray helpers once we create new ones. Not disposing caused the multiple rays being attached to the mesh.
           this.rayHelper;
@@ -71,7 +75,6 @@
           this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
           this.eyes = [];
 
-          let r = 20;
           let dalpha = 10;
           let alpha = -(dalpha*this.eyes_count)/2;          
           
@@ -83,7 +86,7 @@
 
           this._view = new BABYLON.MeshBuilder.CreateBox(
             "box",
-            { height: 1, width: 1, depth: 1 },
+            { height: 1.0, width: 1.0, depth: 1.0},
           );
           this._view.material = new BABYLON.StandardMaterial();
           this._view.material.diffuseColor = new BABYLON.Color3(1.0, 0, 0); 
@@ -92,7 +95,7 @@
 
           /**Now we create agent's eyes*/
           for (let i = 0; i < this.eyes_count; i++){
-            let eye = new Eye(this, alpha, r);
+            let eye = new Eye({agent: this, angle: alpha, radius: this.eye_view_radius});
             let mesh = eye.view;
             this.view.addChild(mesh);
             this.eyes.push(eye);
@@ -216,45 +219,63 @@
 
       }
 
-      class Apple {
+      class Food {
         constructor(params) {
-          this.body = BABYLON.MeshBuilder.CreateSphere("apple", {});
-          this.body.position.x = params.x;
-          this.body.position.z = params.z;
-          this.appleMaterial = new BABYLON.StandardMaterial(
+          this._view = BABYLON.MeshBuilder.CreateSphere("apple", {});
+          this._view.position = params.position;
+          this.material = new BABYLON.StandardMaterial(
             "myMaterial",
             params.scene
           );
           this.reward = 10;
-          this.appleMaterial.emissiveColor = new BABYLON.Color3(0, 0, 1);
-          this.body.material = this.appleMaterial;
+          this.material.emissiveColor = new BABYLON.Color3(0, 0, 1);
+          this._view.material = this.material;
+          this.age = 0;
+          this.type = 1;
+          this.reward = 9.0;
+          this.cleanup_ = false;
+          this._view._rl = {
+            type: this.type,
+            obj: this
+          }
+      
         }
         get position(){
-          return this.body.position;
+          return this._view.position;
         }
         set position(pos){
-          this.body.position = pos;
+          this._view.position = pos;
         }
       }
 
       class Poison {
         constructor(params) {
-          this.body = BABYLON.MeshBuilder.CreateBox("poison", {});
-          this.body.position.x = params.x;
-          this.body.position.z = params.z;
-          this.poisonMaterial = new BABYLON.StandardMaterial(
+          this._view = BABYLON.MeshBuilder.CreateBox("poison", {});
+          this._view.position = params.position;
+          this.material = new BABYLON.StandardMaterial(
             "myMaterial",
             params.scene
           );
           this.reward = -70;
-          this.poisonMaterial.emissiveColor = new BABYLON.Color3(1, 0, 0);
-          this.body.material = this.poisonMaterial;
+          this.material.emissiveColor = new BABYLON.Color3(1, 0, 0);
+          this._view.material = this.material;
+
+          this.age = 0;
+          this.type = 2;
+          this.reward = -70;
+          this.cleanup_ = false;
+          this._view.position = params.position;
+          this._view._rl = {
+            type: this.type,
+            obj: this
+          }
+      
         }
         get position(){
-          return this.body.position;
+          return this._view.position;
         }
         set position(pos){
-          this.body.position = pos;
+          this._view.position = pos;
         }
       }
 
@@ -262,6 +283,7 @@
       class BabylonjsVRExperimentWorld{
 
         constructor(opt){
+          this.params_setter = params_setter.bind(this);
 
           this._default_params = {
             "items_count": 500,
@@ -270,6 +292,7 @@
             "algorithm": null,
             "UI": null
           };
+          this.params_setter(this._default_params, opt);
 
           this.canvas = document.getElementById("renderCanvas");
           this.engine = null;
@@ -326,7 +349,7 @@
         }
         // collide with items
         if(check_items) {
-          let res = eye.get_detection({scene: this.sceneToRender, items: this.items});
+          let res = eye.get_detection({scene: this.scene, items: this.items});
           if(res) {
             if(!minres) { minres=res; }
           }
@@ -407,24 +430,21 @@
           
           // apply outputs of agents on evironment
           for(let i=0,n=this.agents.length;i<n;i++) {
-            let a = this.agents[i];
+            let agent = this.agents[i];
             let v = new BABYLON.Vector3(0, 0, 1);
-            v = a.view.getDirection(v);
+            v = agent.view.getDirection(v);
             v = v.normalize();
-            v = v.scale(a.speed);
-            a.position = a.position.add(v);
-            a.rotation.y += a.rot;
+            v = v.scale(agent.speed);
+            agent.position = agent.position.add(v);
+            agent.rotation.y += agent.rot;
             
             let res = this.computeCollisions(a.frontEye, true, false);
-            if(res) {
-              a.position = a.op;
-            }
             
             // handle boundary conditions
-            if(a.position.x< -this.W/2)a.position.x=-this.W/2;
-            if(a.position.x>this.W/2)a.position.x=this.W/2;
-            if(a.position.z< -this.H/2)a.position.z=-this.H/2;
-            if(a.position.z>this.H/2)a.position.z=this.H/2;
+            if(agent.position.x< -this.W/2)agent.position.x=-this.W/2;
+            if(agent.position.x>this.W/2)agent.position.x=this.W/2;
+            if(agent.position.z< -this.H/2)agent.position.z=-this.H/2;
+            if(agent.position.z>this.H/2)agent.position.z=this.H/2;
           }
           
           for(var i=0,n=this.items.length;i<n;i++) {
@@ -433,14 +453,14 @@
             
             // see if some agent gets lunch
             for(var j=0,m=this.agents.length;j<m;j++) {
-              var a = this.agents[j];
-              var d = BABYLON.Vector3.Distance(a.position, it.position);
-              if(d < it.rad + a.rad) {
+              var agent = this.agents[j];
+              var d = BABYLON.Vector3.Distance(agent.position, it.position);
+              if(d < it.rad + agent.rad) {
                 
                 var rescheck = this.computeCollisions(a.frontEye, true, false);
                 if(!rescheck) { 
-                  if(it.type === 1) a.digestion_signal += it.reward;
-                  if(it.type === 2) a.digestion_signal += it.reward;
+                  if(it.type === 1) agent.digestion_signal += it.reward;
+                  if(it.type === 2) agent.digestion_signal += it.reward;
                   this.removeItem(it);
                   i--;
                   n--;
@@ -494,6 +514,20 @@
     
         get_episode_length(){
           return this.len_episode;
+        }
+
+        generateItem(){
+          let x = getRandomArbitrary(-this.W, this.W);
+          let y = getRandomArbitrary(-this.H, this.H);
+          let t = getRandomInt(1, 3); // food or poison (1 and 2)
+          let it = null;
+          if (t == 1){
+            it = new Food({position: new BABYLON.Vector3(x, 0, y), scene: this.scene});
+          }
+          else{
+            it = new Poison({position: new BABYLON.Vector3(x, 0, y), scene: this.scene });
+          }
+          this.items.push(it);
         }
 
         async createScene() {
@@ -560,28 +594,10 @@
     
           this.items = [];
 
-          //FRUITS AND POISONS INITIALIZATION
-          for (var i = 0; i < 10; i++) {
-            const flips = [-1, 1];
-            function randomFlip(flips) {
-              return flips[Math.floor(Math.random() * flips.length)];
-            }
-            var randomX = Math.random() * 50 * randomFlip(flips);
-            var randomZ = Math.random() * 50 * randomFlip(flips);
-            var apple = new Apple({"x": randomX, "z": randomZ, "scene": this.scene});
-            this.items.push(apple);
+          for(let k=0;k<this.items_count;k++) {
+            this.generateItem();
           }
-          for (var i = 0; i < 10; i++) {
-            const flips = [-1, 1];
-            function randomFlip(flips) {
-              return flips[Math.floor(Math.random() * flips.length)];
-            }
-            var randomX = Math.random() * 50 * randomFlip(flips);
-            var randomZ = Math.random() * 50 * randomFlip(flips);
-            var poison = new Poison({"x": randomX, "z": randomZ, "scene": this.scene});
-            this.items.push(poison);
-          }
-  
+
           // enable xr
           this.xr = await this.scene.createDefaultXRExperienceAsync({
             floorMeshes: [ground]
