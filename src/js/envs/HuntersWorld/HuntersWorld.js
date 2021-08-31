@@ -5,7 +5,7 @@
  *  --type: continuous;
  */
 
-var CONSTANTS = {
+let CONSTANTS = {
   "TYPES": {
     "BULLET": 0,
     "POISON": 1,
@@ -178,7 +178,7 @@ class Agent{
       this.view.add(eye.sphere_point);
       this.eyes.push(eye);
       alpha += dalpha;
-  }
+    }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
       this._frontEye = this.eyes[Math.round(this.eyes.length/2)];
@@ -247,9 +247,9 @@ class Agent{
 
   get_reward() {
     // compute reward 
-    var proximity_reward = 0.0;
-    var num_eyes = this.eyes.length;
-    for(var i=0;i<num_eyes;i++) {
+    let proximity_reward = 0.0;
+    let num_eyes = this.eyes.length;
+    for(let i=0;i<num_eyes;i++) {
       var e = this.eyes[i];
       // Here could be
       // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
@@ -260,13 +260,13 @@ class Agent{
     proximity_reward = proximity_reward/num_eyes;
     
     // agents like to go straight forward
-    var forward_reward = 0.0;
+    let forward_reward = 0.0;
     if(this.actionix === 0 && proximity_reward > 0.75) forward_reward = 0.1 * proximity_reward;
     
     // agents like to eat good things
-    var digestion_reward = this.digestion_signal;
+    let digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
-    var reward = proximity_reward + forward_reward + digestion_reward;   
+    let reward = proximity_reward + forward_reward + digestion_reward;   
     this.average_reward_window.add(reward);
     return reward;
   }
@@ -437,14 +437,15 @@ class HuntersWorld {
      * generates food and poison
      */
     generateItem(){
-      var x = getRandomArbitrary(-this.W, this.W);
-      var y = getRandomArbitrary(-this.H, this.H);
-      var t = getRandomInt(1, 3); // food or poison (1 and 2)
+      let x = getRandomArbitrary(-this.W, this.W);
+      let y = getRandomArbitrary(-this.H, this.H);
+      let t = getRandomInt(1, 3); // food or poison (1 and 2)
+      let it = null;
       if (t == 1){
-        var it = new Food(new THREE.Vector3(x, 1, y));
+        it = new Food(new THREE.Vector3(x, 1, y));
       }
       else{
-        var it = new Poison(new THREE.Vector3(x, 1, y));
+        it = new Poison(new THREE.Vector3(x, 1, y));
       }
       this.items.push(it);
       this.Scene.add(it.view);
@@ -558,7 +559,7 @@ class HuntersWorld {
       this.stats.update();
       
       this.Renderer.render(this.Scene, this.Camera);
-      var delta = this.Clock.getDelta();
+      let delta = this.Clock.getDelta();
       
       this.Controls.update(delta);
       for (let el of this.bullets){
@@ -569,7 +570,7 @@ class HuntersWorld {
           if(it.type === 2) this.agents[0].digestion_signal += it.reward;
           this.removeItem(it);
           this.removeBullet(el);
-        }else if (el.way.length() > 20){
+        } else if (el.way.length() > 20){
           this.removeBullet(el);
           this.agents[0].digestion_signal += -10;
         }
@@ -609,12 +610,6 @@ class HuntersWorld {
       return ret;
     }
 
-
-    start() {
-      requestAnimationFrame(this.start.bind(this));
-      this.step();
-    }
-
     addBullet(bullet){
       this.bullets.push(bullet);
       this.Scene.add(bullet.view);
@@ -643,14 +638,11 @@ class HuntersWorld {
       // tick the environment
       this.clock++;
       
-      // fix input to all agents based on environment
-      // process eyes
-      this.collpoints = [];
-      for(var i=0,n=this.agents.length;i<n;i++) {
-        var a = this.agents[i];
-        for(var ei=0,ne=a.eyes.length;ei<ne;ei++) {
-          var e = a.eyes[ei];
-          var res = this.computeCollisions(e, true, true);
+      for(let i=0,n=this.agents.length;i<n;i++) {
+        let a = this.agents[i];
+        for(let ei=0,ne=a.eyes.length;ei<ne;ei++) {
+          let e = a.eyes[ei];
+          let res = this.computeCollisions(e, true, true);
           if(res) {
             // eye collided with wall
             e.sensed_proximity = res.dist;
@@ -663,22 +655,21 @@ class HuntersWorld {
       }
       let states = [];
       // let the agents behave in the world based on their input
-      for(var i=0,n=this.agents.length;i<n;i++) {
+      for(let i=0,n=this.agents.length;i<n;i++) {
         states.push(this.agents[i].get_observation());
       }
       
       // apply outputs of agents on evironment
-      for(var i=0,n=this.agents.length;i<n;i++) {
-        var a = this.agents[i];
-        // var v = a.position.clone();
-        var v = new THREE.Vector3();
+      for(let i=0,n=this.agents.length;i<n;i++) {
+        let a = this.agents[i];
+        let v = new THREE.Vector3();
         a._view.getWorldDirection(v);
         v.normalize();
         v.multiplyScalar(a.speed);
         a.position.add(v);
         a.rotation.y += a.rot;
         
-        var res = this.computeCollisions(a.frontEye, true, false);
+        let res = this.computeCollisions(a.frontEye, true, false);
         if(res) {
           a.position = a.op;
         }
@@ -690,17 +681,17 @@ class HuntersWorld {
         if(a.position.z>this.H/2)a.position.z=this.H/2;
       }
       
-      for(var i=0,n=this.items.length;i<n;i++) {
-        var it = this.items[i];
+      for(let i=0,n=this.items.length;i<n;i++) {
+        let it = this.items[i];
         it.age += 1;
         
         // see if some agent gets lunch
-        for(var j=0,m=this.agents.length;j<m;j++) {
-          var a = this.agents[j];
-          var d = a.position.distanceTo(it.position);
+        for(let j=0,m=this.agents.length;j<m;j++) {
+          let a = this.agents[j];
+          let d = a.position.distanceTo(it.position);
           if(d < it.rad + a.rad) {
             
-            var rescheck = this.computeCollisions(a.frontEye, true, false);
+            let rescheck = this.computeCollisions(a.frontEye, true, false);
             if(!rescheck) { 
               if(it.type === 1) a.digestion_signal += it.reward;
               if(it.type === 2) a.digestion_signal += it.reward;
@@ -722,7 +713,7 @@ class HuntersWorld {
         this.generateItem();
       }
       let rewards = [];
-      for(var i=0,n=this.agents.length;i<n;i++) {
+      for(let i=0,n=this.agents.length;i<n;i++) {
         rewards.push(this.agents[i].get_reward());
       }
       done = 0;
