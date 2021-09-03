@@ -63,7 +63,7 @@
     /*Create agent object*/
     var a = new Agent({eyes_count: 36});
     /*Create neural network*/
-    let cur_nn = build_full_connected(a.observation_space.shape, [64, 64], a.action_space.shape, 'tanh', 'tanh');
+    let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.action_space.shape, 'tanh', 'tanh');
     /*Create neural network*/
     let weights_obj = get_serialized_layers_data(cur_nn);
 

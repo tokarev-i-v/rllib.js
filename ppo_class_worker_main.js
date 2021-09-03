@@ -3,16 +3,17 @@ tf.disableDeprecationWarnings();
 
 import {FlatAreaEatWorld_c, Agent as FlatAgent} from "./src/jsm/envs/FlatAreaWorld/FlatAreaEatWorld_c"
 import {TestWorld_c, Agent as TestAgent} from "./src/jsm/envs/TestWorld/TestWorld_c"
-import {HuntersWorld, Agent as HunterAgent} from "./src/jsm/envs/HuntersWorld/HuntersWorld"
+import {HuntersWorld as HunterAgent2D, Agent as HunterAgent} from "./src/jsm/envs/HuntersWorld/HuntersWorld"
 import {HuntersWorld as HuntersWorld3D, Agent as HunterAgent3D} from "./src/jsm/envs/World3D/HuntersWorld3D"
 import {build_full_connected}  from './src/jsm/neuralnetworks';
 import {get_serialized_layers_data, create_model_by_serialized_data}  from './src/jsm/utils';
 import {SimpleUI} from './src/jsm/ui/SimplePPOUI'
-let curretWorldClass = HuntersWorld3D;
+let curretWorldClass = HunterAgent2D;
+let curAgent = HunterAgent;
 
 var PPOworker = new Worker(new URL('./src/jsm/agents/policy_gradients/ppo_class_worker.js', import.meta.url), {type: 'module'});
 
-var a = new HunterAgent3D({eyes_count: 10});
+var a = new curAgent({eyes_count: 10});
 let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.action_space.shape, 'tanh', 'tanh');
 /*Create neural network*/
 let weights_obj = get_serialized_layers_data(cur_nn);

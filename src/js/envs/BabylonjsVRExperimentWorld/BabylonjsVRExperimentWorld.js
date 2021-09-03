@@ -229,12 +229,11 @@
             "myMaterial",
             params.scene
           );
-          this.reward = 10;
           this.material.emissiveColor = new BABYLON.Color3(0, 0, 1);
           this._view.material = this.material;
           this.age = 0;
           this.type = 1;
-          this.reward = 9.0;
+          this.reward = 70.0;
           this.cleanup_ = false;
           this._view._rl = {
             type: this.type,
@@ -267,13 +266,12 @@
             params.scene
           );
           this.eat_radius = 1;
-          this.reward = -70;
+          this.reward = -70.0;
           this.material.emissiveColor = new BABYLON.Color3(1, 0, 0);
           this._view.material = this.material;
 
           this.age = 0;
           this.type = 2;
-          this.reward = -70;
           this.cleanup_ = false;
           this._view.position = params.position;
           this._view._rl = {
@@ -320,6 +318,9 @@
           this.xrCamera;
           this.clock = 0;
           this.agents = [];
+          
+          /** this value will*/
+          this.each_step_penalty = 0;
 
           this.rew_episode = 0;
           this.len_episode = 0;
@@ -481,8 +482,6 @@
           for(let i=0,n=this.items.length;i<n;i++) {
             let it = this.items[i];
             it.age += 1;
-            
-            
             if(it.age > 5000 && this.clock % 100 === 0 && getRandomArbitrary(0,1)<0.1) {
               this.removeItem(it);
               i--;
@@ -502,7 +501,13 @@
           reward = rewards[0];
           let info = {};
           
-          // reward -= this.clock;
+          if (reward <= 0){
+            reward += this.each_step_penalty;
+            this.each_step_penalty -= 1;
+          } else {
+            this.each_step_penalty = 0;
+          }
+
           let ret_data = [state, reward, done, info];
           if(this.clock % 1000 == 0){
             done = true;
