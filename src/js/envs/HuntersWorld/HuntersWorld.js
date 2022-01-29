@@ -70,7 +70,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -70;
+    this.reward = -70000;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -160,6 +160,8 @@ class Agent{
     );
     this.min_action = -1.0;
     this.max_action = 1.0;
+
+    this.hungry = 0;
 
     this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
@@ -267,6 +269,12 @@ class Agent{
     let digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
     let reward = proximity_reward + forward_reward + digestion_reward;   
+    if (reward > 0){
+      this.hungry = 0;
+    } else {
+      this.hungry -= 10;
+    }
+    reward += this.hungry;
     this.average_reward_window.add(reward);
     return reward;
   }
@@ -625,10 +633,10 @@ class HuntersWorld {
       this.agents[0].rot = action[0];
       this.agents[0].speed = action[1];  
 
-      if (action[2] > 0.5){
-        let bullet = this.agents[0].fire();
-        this.addBullet(bullet);
-      }
+      // if (action[2] > 0.5){
+      //   let bullet = this.agents[0].fire();
+      //   this.addBullet(bullet);
+      // }
       if (this.need_reset_env){
         this.reset();
         this.need_reset_env = 0;
@@ -722,7 +730,7 @@ class HuntersWorld {
       reward = rewards[0];
       let info = {};
       
-      // reward -= this.clock;
+      reward -= 9;
       let ret_data = [state, reward, done, info];
       if(this.clock % 1000 == 0){
         done = true;
