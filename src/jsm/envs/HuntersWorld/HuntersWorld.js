@@ -44,7 +44,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 0.99;
+    this.reward = 10;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -81,7 +81,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -0.99;
+    this.reward = -10;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -172,6 +172,8 @@ export class Agent{
     this.min_action = -1.0;
     this.max_action = 1.0;
 
+    this.hungry = 0;
+
     this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
@@ -259,13 +261,12 @@ export class Agent{
     // compute reward 
     var proximity_reward = 0.0;
     var num_eyes = this.eyes.length;
-    for(var i=0;i<num_eyes;i++) {
-      var e = this.eyes[i];
-      // Here could be
-      // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
-      // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
-      // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
-    }
+    // for(var i=0;i<num_eyes;i++) {
+    //   var e = this.eyes[i];
+    //   proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
+    //   proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
+    //   proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
+    // }
     // console.log("num_eyes: %s ", num_eyes);    
     proximity_reward = proximity_reward/num_eyes;
     
@@ -277,6 +278,12 @@ export class Agent{
     var digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
     var reward = proximity_reward + forward_reward + digestion_reward;   
+    if (reward > 0){
+      this.hungry = 0;
+    } else {
+      this.hungry -= 10;
+    }
+    reward += this.hungry;
     this.average_reward_window.add(reward);
     return reward;
   }

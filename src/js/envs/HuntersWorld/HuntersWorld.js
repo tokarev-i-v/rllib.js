@@ -730,7 +730,6 @@ class HuntersWorld {
       reward = rewards[0];
       let info = {};
       
-      reward -= 9;
       let ret_data = [state, reward, done, info];
       if(this.clock % 1000 == 0){
         done = true;
