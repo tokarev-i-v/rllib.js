@@ -1,3 +1,9 @@
+
+/**
+ * 
+ * @param {*} logits output from neural network
+ * @returns 
+ */
 const softmax_entropy = (logits) => tf.tidy(()=>{
     return tf.keep(tf.sum(tf.softmax(logits, dim=-1).mul(tf.logSoftmax(logits, axis=-1)), -1))
 });
@@ -70,7 +76,11 @@ const GAE = (rews, v, v_last, gamma=0.99, lam=0.95) => tf.tidy(()=>{
  * Contains replaybuffer for PPO.
  */
 class Buffer{
-
+    /**
+     * 
+     * @param {*} gamma 
+     * @param {*} lam 
+     */
     constructor(gamma=0.99, lam=0.95){
         this.gamma = gamma;
         this.lam = lam;
@@ -79,6 +89,14 @@ class Buffer{
         this.ac = tf.tensor([]);
         this.rtg = tf.tensor([]);
     }
+    /**
+     * 
+     * @param {*} temp_states 
+     * @param {*} temp_rewards 
+     * @param {*} temp_actions 
+     * @param {*} temp_values 
+     * @param {*} last_sv 
+     */
     store(temp_states, temp_rewards, temp_actions, temp_values, last_sv){
         if (temp_states.length > 0){
             tf.tidy(()=>{
@@ -94,6 +112,10 @@ class Buffer{
             });
         }
     }
+    /**
+     * 
+     * @returns 
+     */
     get_batch(){
         return tf.tidy(()=> {
             let norm_adv = tf.keep(this.adv.sub(this.adv.mean()).div(tf.moments(this.adv).variance.sqrt().add(tf.scalar(1e-10))));

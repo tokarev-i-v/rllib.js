@@ -17,7 +17,6 @@
   <script src='src/js/types.js'></script>
   <script src='src/js/utils.js'></script>
   <script src='src/js/ui/SimplePPOUI.js'></script>
-  <!-- <script src='src/js/envs/World3D/HuntersWorld3D.js'></script> -->
   <script src='src/js/envs/HuntersWorld/HuntersWorld.js'></script>
 </head>
  <body>
@@ -27,9 +26,10 @@ tf.disableDeprecationWarnings();
 
 let curretWorldClass = HuntersWorld;
 
+
 var PPOworker = new Worker("./src/js/agents/policy_gradients/ppo_class_worker.js");
 
-/*Create agent*/
+/*Create agent object*/
 var a = new Agent({eyes_count: 36});
 /*Create neural network*/
 let cur_nn = build_full_connected(a.observation_space.shape, [64, 64], a.action_space.shape, 'tanh', 'tanh');

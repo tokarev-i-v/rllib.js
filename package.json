@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "name": "rllib.js",
   "version": "0.1.0",
@@ -84,3 +85,93 @@
   "repository": "https://github.com/polyzer/rllib.js.git",
   "author": "polyzer <realpolyzer@yandex.ru>"
 }
+=======
+{
+  "name": "rllib.js",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=8.9.0"
+  },
+  "dependencies": {
+    "@babel/node": "^7.10.5",
+    "@tensorflow/tfjs": "^3.8.0",
+    "@tensorflow/tfjs-core": "^3.8.0",
+    "@tensorflow/tfjs-node": "^3.8.0",
+    "@tensorflow/tfjs-node-gpu": "^3.8.0",
+    "@tensorflow/tfjs-vis": "^1.5.1",
+    "babel-node": "^0.0.1-security",
+    "chai": "^4.2.0",
+    "concurrently": "^6.2.1",
+    "dat.gui": "^0.7.7",
+    "esm": "^3.2.25",
+    "express": "^4.17.1",
+    "gl": "^4.9.0",
+    "hammerjs": "^2.0.8",
+    "jasmine": "^3.8.0",
+    "jsdom": "^16.4.0",
+    "latest": "^0.2.0",
+    "mocha": "^8.1.3",
+    "moment": "^2.29.1",
+    "parcel": "^2.0.0-rc.0",
+    "src": "^1.1.2"
+  },
+  "scripts": {
+    "dqn": "cross-env NODE_ENV=development parcel dqn.html --open",
+    "vr-env": "concurrently \"http-server -a localhost -p 8080\" \"open http://localhost:8080/ppo-babylon-vr-env.html\"",
+    "ppo-hungry3d-jsm": "cross-env NODE_ENV=development parcel ppo-threejs-hungry3d-jsm.html src/jsm/agents/policy_gradients/ppo_class_worker.js --open",
+    "ppo-hungry-js": "concurrently \"http-server -a localhost -p 8080\" \"open http://localhost:8080/ppo-threejs-hungry-js.html\"",
+    "ppo-hungry-jsm": "cross-env NODE_ENV=development parcel ppo-threejs-hungry-jsm.html  src/jsm/agents/policy_gradients/ppo_class_worker.js --open",
+    "ppo-node": "node -r esm ppo-threejs-node.js",
+    "build": "cross-env NODE_ENV=development parcel ppo-threejs-hungry-jsm.html  src/jsm/agents/policy_gradients/ppo_class_worker.js --dist-dir build --public-url ./",
+    "test": "babel-node --inspect tests.js",
+    "lint": "eslint ."
+  },
+  "browser": {
+    "crypto": false
+  },
+  "devDependencies": {
+    "@parcel/transformer-image": "^2.0.0-rc.0",
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "~6.26.0",
+    "babel-preset-env": "~1.6.1",
+    "clang-format": "~1.2.2",
+    "cross-env": "^7.0.2",
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.9.1",
+    "http-server": "^0.12.3",
+    "parcel-plugin-static-files-copy": "^2.5.0"
+  },
+  "eslintConfig": {
+    "extends": "google",
+    "rules": {
+      "require-jsdoc": 0,
+      "valid-jsdoc": 0
+    },
+    "env": {
+      "es6": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 8,
+      "sourceType": "module"
+    }
+  },
+  "eslintIgnore": [
+    "dist/"
+  ],
+  "staticFiles": {
+    "staticPath": [
+      "src/models",
+      "src/images",
+      "models"
+    ],
+    "watcherGlob": "**"
+  },
+  "repository": "https://github.com/polyzer/rllib.js.git",
+  "author": "polyzer <realpolyzer@yandex.ru>"
+}
+>>>>>>> dev
