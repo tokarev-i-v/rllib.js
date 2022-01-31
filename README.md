@@ -1,8 +1,9 @@
 # rllib.js
 Reinforcement learning library with JavaScript.  
 It provides some reinforcement learning algorithms and environments.  
-At this moment uses [TensorFlow.js](!https://github.com/tensorflow/tfjs) to implement functions and [three.js](!https://threejs.org/) for visualization.  
-[Live example](https://polyzer.github.io/rllib/build/ppo_web_worker.html)
+At this moment uses [TensorFlow.js](!https://github.com/tensorflow/tfjs) to implement functions and [three.js](!https://threejs.org/) for visualization.
+
+## [Live example](https://polyzer.github.io/rllib/build/ppo-threejs-hungry-jsm.html)
  
 Visual library: [three.js](!https://threejs.org/)
 

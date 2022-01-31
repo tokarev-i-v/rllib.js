@@ -251,13 +251,13 @@ class Agent{
     // compute reward 
     let proximity_reward = 0.0;
     let num_eyes = this.eyes.length;
-    for(let i=0;i<num_eyes;i++) {
-      var e = this.eyes[i];
-      // Here could be
-      // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
-      // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
-      // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
-    }
+    // for(let i=0;i<num_eyes;i++) {
+    //   var e = this.eyes[i];
+    //   // Here could be
+    //   proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
+    //   proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
+    //   proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
+    // }
     // console.log("num_eyes: %s ", num_eyes);    
     proximity_reward = proximity_reward/num_eyes;
     
