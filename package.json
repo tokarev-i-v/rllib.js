@@ -1,94 +1,6 @@
-<<<<<<< HEAD
 {
   "name": "rllib.js",
-  "version": "0.1.0",
-  "description": "",
-  "main": "index.js",
-  "license": "MIT",
-  "private": true,
-  "engines": {
-    "node": ">=8.9.0"
-  },
-  "dependencies": {
-    "@babel/node": "^7.10.5",
-    "@tensorflow/tfjs": "^3.8.0",
-    "@tensorflow/tfjs-core": "^3.8.0",
-    "@tensorflow/tfjs-node": "^3.8.0",
-    "@tensorflow/tfjs-node-gpu": "^3.8.0",
-    "@tensorflow/tfjs-vis": "^1.5.1",
-    "babel-node": "^0.0.1-security",
-    "chai": "^4.2.0",
-    "dat.gui": "^0.7.7",
-    "esm": "^3.2.25",
-    "express": "^4.17.1",
-    "gl": "^4.9.0",
-    "hammerjs": "^2.0.8",
-    "jasmine": "^3.8.0",
-    "jsdom": "^16.4.0",
-    "latest": "^0.2.0",
-    "mocha": "^8.1.3",
-    "moment": "^2.29.1",
-    "src": "^1.1.2"
-  },
-  "scripts": {
-    "dqn": "cross-env NODE_ENV=development parcel dqn.html --open",
-    "vr_env": "cross-env NODE_ENV=development parcel vr-env.html --open --no-hmr ",
-    "ppo_3d": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --open",
-    "ppo_2d": "concurrently \"http-server -a localhost -p 8080\" \"open http://localhost:8080/ppo-example-2d.html\"",
-    "ppo_dense": "cross-env NODE_ENV=development parcel examples/ppo_dense_hunter_world_3d.html ./agents/policy_gradients/ppo_class_worker.js --open",
-    "ppo_node": "node -r esm ppo_node.js",
-    "build": "cross-env NODE_ENV=development parcel ppo_class_web_worker.html ./agents/policy_gradients/ppo_class_worker.js --target browser --out-dir build --public-url ./",
-    "test": "babel-node --inspect tests.js",
-    "lint": "eslint ."
-  },
-  "browser": {
-    "crypto": false
-  },
-  "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-polyfill": "~6.26.0",
-    "babel-preset-env": "~1.6.1",
-    "clang-format": "~1.2.2",
-    "cross-env": "^7.0.2",
-    "eslint": "^6.8.0",
-    "eslint-config-google": "^0.9.1",
-    "http-server": "^0.12.3",
-    "parcel-bundler": "^1.12.5",
-    "parcel-plugin-static-files-copy": "^2.5.0"
-  },
-  "eslintConfig": {
-    "extends": "google",
-    "rules": {
-      "require-jsdoc": 0,
-      "valid-jsdoc": 0
-    },
-    "env": {
-      "es6": true
-    },
-    "parserOptions": {
-      "ecmaVersion": 8,
-      "sourceType": "module"
-    }
-  },
-  "eslintIgnore": [
-    "dist/"
-  ],
-  "staticFiles": {
-    "staticPath": [
-      "src/models",
-      "src/images",
-      "models"
-    ],
-    "watcherGlob": "**"
-  },
-  "repository": "https://github.com/polyzer/rllib.js.git",
-  "author": "polyzer <realpolyzer@yandex.ru>"
-}
-=======
-{
-  "name": "rllib.js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "main": "index.js",
   "license": "MIT",
@@ -174,4 +86,3 @@
   "repository": "https://github.com/polyzer/rllib.js.git",
   "author": "polyzer <realpolyzer@yandex.ru>"
 }
->>>>>>> dev
