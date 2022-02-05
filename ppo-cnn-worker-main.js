@@ -3,11 +3,11 @@ tf.disableDeprecationWarnings();
 
 import {FlatAreaEatWorld_c, Agent as FlatAgent} from "./envs/FlatAreaWorld/FlatAreaEatWorld_c"
 import {TestWorld_c, Agent as TestAgent} from "./envs/TestWorld/TestWorld_c"
-import {HuntersWorld, Agent as HunterAgent} from "./envs/HuntersWorld/HuntersWorld"
+import {HungryWorld, Agent as HungryAgent} from "./envs/HungryWorld2D/HungryWorld2D"
 import {build_full_connected, build_cnn_full}  from './src/jsm/neuralnetworks';
 import {getWeightsFromModelToWorkerTransfer, setWeightsToModelByObject}  from './src/jsm/utils';
 import {SimpleUI} from './src/jsm/ui/SimplePPOUI'
-let curretWorldClass = HuntersWorld;
+let curretWorldClass = HungryWorld;
 
 var PPOworker = new Worker("agents/policy_gradients/ppo_class_worker.js");
 

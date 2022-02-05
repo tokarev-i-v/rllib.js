@@ -5,6 +5,13 @@
  *  --type: continuous;
  */
 
+import * as tf from '@tensorflow/tfjs-node-gpu';
+import * as THREE from '../../threejs/three.module';
+import {ColladaLoader} from '../../threejs/ColladaLoader';
+
+import {params_setter, getRandomArbitrary, getRandomInt} from '../../utils_node';
+import {Buffer, BoxSpace} from '../../types_node';
+
 var CONSTANTS = {
   "TYPES": {
     "BULLET": 0,
@@ -33,7 +40,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 9.0;
+    this.reward = 0.99;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -55,7 +62,7 @@ class Food {
 /**
  * Class describes targets, that must be eaten by agent.
  * Charasteristics:
- *  --reward: -0.99
+ *  --reward: 0.99
  */
 class Poison {
   /**
@@ -70,7 +77,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -70;
+    this.reward = -0.99;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -137,7 +144,7 @@ class Bullet {
 /**
  * Agent from this world;
  */
-class Agent{
+export class Agent{
   /**
    * 
    * @param {Object} opt 
@@ -150,7 +157,7 @@ class Agent{
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // left
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // top
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // bottom
-	    new THREE.MeshStandardMaterial( { map: THREE.ImageUtils.loadTexture('src/images/hunter_black_278.png') } ), // back
+	    new THREE.MeshStandardMaterial( { map: THREE.ImageUtils.loadTexture('./hunter_black_278.png') } ), // back
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } )  // front
 	];
 
@@ -165,20 +172,18 @@ class Agent{
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
     this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
-    console.log("Observation space shape: ", this.observation_space.shape);
     this.eyes = [];
     let r = 20;
     let dalpha = 10;
     let alpha = -(dalpha*this.eyes_count)/2;
     /**Now we create agent's eyes*/
     for (let i = 0; i < this.eyes_count; i++){
-      let eye = new Eye(this, alpha, r);
-      let mesh = eye.view;
-      this.view.add(mesh);
-      this.view.add(eye.sphere_point);
-      this.eyes.push(eye);
-      alpha += dalpha;
-  }
+        let eye = new Eye(this, alpha, r);
+        let mesh = eye.view;
+        this.view.add(mesh);
+        this.eyes.push(eye);
+        alpha += dalpha;
+    }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
       this._frontEye = this.eyes[Math.round(this.eyes.length/2)];
@@ -196,8 +201,9 @@ class Agent{
     this.speed = 0.0;
     this.average_reward_window = new Buffer(10, 1000);
     this.displayHistoryData = [];
-    this.surface = { name: 'Mean reward', tab: 'Charts' };
-    setInterval(this.graphic_vis.bind(this), 1000);
+
+    // this.surface = { name: 'Mean reward', tab: 'Charts' };
+    // setInterval(this.graphic_vis.bind(this), 1000);
   }
   
   fire(){
@@ -222,8 +228,9 @@ class Agent{
       this.displayHistoryData.splice(0,100);
     }
     this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
-    let data = {values: this.displayHistoryData};
-    tfvis.render.linechart(this.surface, data);
+    console.log("Mean reward: ", this.average_reward_window.get_average());
+    // let data = {values: this.displayHistoryData};
+    // tfvis.render.linechart(this.surface, data);
   }
   /**
    * 
@@ -256,7 +263,6 @@ class Agent{
       // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
       // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
     }
-    // console.log("num_eyes: %s ", num_eyes);    
     proximity_reward = proximity_reward/num_eyes;
     
     // agents like to go straight forward
@@ -302,7 +308,7 @@ class Agent{
  * @class Eye
  * It presents as agent's eye detector.
  */
-class Eye{
+export class Eye{
   /**
    * 
    * @param {THREE.Vector3} agent_pos_vec Vector that would use as src
@@ -311,30 +317,14 @@ class Eye{
    * @param {Number} r radius
    */
   constructor(a, alpha, r){
-
-    const geometry = new THREE.BufferGeometry();
-    const material = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 3 } );    
-    const positions = [];
-    const colors = [];
-
-    positions.push( 0, 0, 0 );
-    positions.push(Math.sin(Math.PI*alpha/180)*r,0,  Math.cos(Math.PI*alpha/180)*r)
-
-    
-    geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
-		// geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-    this._view = new THREE.Line(
-      geometry,
-      material
+    this._view = new THREE.Mesh(
+      new THREE.BoxBufferGeometry(1,1,10),
+      new THREE.MeshBasicMaterial({color: 0x111111})
     );
-    this.sphere_point = new THREE.Mesh(
-      new THREE.SphereBufferGeometry(0.1, 10, 10),
-      new THREE.MeshBasicMaterial({color:0x000000})
-    )
-    this.sphere_point.geometry.computeBoundingBox();
-    this.sphere_point.position.set(Math.sin(Math.PI*alpha/180)*r, 0, Math.cos(Math.PI*alpha/180)*r);
-    this.end_position = new THREE.Vector3(Math.sin(Math.PI*alpha/180)*r,Math.cos(Math.PI*alpha/180)*r,  Math.PI/2);
     /**setting Eye position and rotation */
+    this._view.position.x = Math.sin(Math.PI*alpha/180)*r;
+    this._view.position.z = Math.cos(Math.PI*alpha/180)*r;
+    this._view.rotation.x = Math.PI/2;
     this._view.geometry.computeBoundingBox();
     this.raycaster = new THREE.Raycaster();
     this.max_range = 20;
@@ -354,13 +344,12 @@ class Eye{
         return el.view;
     });
     let dst = new THREE.Vector3();
-    dst.setFromMatrixPosition( this.sphere_point.matrixWorld );
-    dst.sub(this.a.position.clone());
+    dst.setFromMatrixPosition( this._view.matrixWorld );
+    dst.add(this.a.position.clone().negate());
     dst.normalize();
     this.raycaster.set(this.a.position, dst);
     let intersects = this.raycaster.intersectObjects(targets);
     if (intersects.length > 0 && intersects[0].distance < this.max_range){
-      // intersects[0].object.material.color.setHex( 0x0000ff );
       return {obj: intersects[0].object, type: intersects[0].object._rl.type, dist: intersects[0].distance}
     } else {
       return null;
@@ -375,7 +364,7 @@ class Eye{
    * @class
    * World Contains all features.
    */
-class HuntersWorld {
+export class HungryWorld2D {
 
     /**
      * 
@@ -390,9 +379,9 @@ class HuntersWorld {
       this.params_setter = params_setter.bind(this);
 
       this._default_params = {
-        "items_count": 500,
-        "W": 80,
-        "H": 80,
+        "items_count": 4000,
+        "W": 200,
+        "H": 200,
         "algorithm": null,
         "UI": null
       };
@@ -422,6 +411,8 @@ class HuntersWorld {
         this.Scene.add(agent.view);
         this.agents.push(agent);        
       }
+      
+      this.Renderer.render(this.Scene, this.Camera);
       this.render();
     }   
     /**
@@ -454,62 +445,23 @@ class HuntersWorld {
     this.Container = document.createElement("div");
     this.Container.id = "MainContainer";
     this.Container.classList.add("Container");
-    
-    this.Renderer = new THREE.WebGLRenderer();
-    this.Renderer.setSize(window.innerWidth, window.innerHeight);
-    this.Container.appendChild(this.Renderer.domElement);
-
-    document.body.insertBefore( this.Container, document.body.firstChild);
-
-    this.stats = new Stats();
-    document.body.appendChild(this.stats.dom);
-
+    this.Renderer = new THREE.WebGLRenderer({
+      context: GLOBAL.gl
+    });
     this.Camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
-
-
-
-    window.addEventListener("resize", this.onWindowResize.bind(this), false);
 
     this.Camera.position.set(0,10, 10);
     this.Scene = new THREE.Scene();
     this.Scene.background = new THREE.Color( 0xaaccff );
     this.Scene.fog = new THREE.FogExp2( 0xaaccff, 0.007 );
 
-    let check = false;
-    (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
-    if (check){
-      this.CameraObj = new THREE.Object3D();
-      this.CameraObj.add(this.Camera);
-      this.Controls = new MobileControls({Camera: this.Camera, Object3D: this.CameraObj});      
-      this.Scene.add(this.CameraObj);
-    }else {
-      this.Controls = new THREE.FlyControls(this.Camera, document.getElementById("MainContainer"));
-      this.Controls.movementSpeed = 13;
-      this.Controls.rollSpeed = Math.PI / 8;
-      this.Controls.autoForward = false;
-      this.Controls.dragToLook = true;  
-    }
-
-    this.Loader = new THREE.ColladaLoader();
+    this.Loader = new ColladaLoader();
 
     this.AmbientLight = new THREE.AmbientLight(0xFFFFFF, 0.9);
     this.Scene.add(this.AmbientLight);
 
     
     this.Clock = new THREE.Clock();
-
-    if(typeof(document) !== typeof(undefined)){
-      let TextureLoader = new THREE.TextureLoader();
-      TextureLoader.load("src/images/grass.png", function (tex) {
-          tex.wrapS = THREE.RepeatWrapping;
-          tex.wrapT = THREE.RepeatWrapping;
-          tex.repeat.set(100, 100);
-          let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
-          ground.rotation.x -= Math.PI/2;
-          this.Scene.add(ground);
-      }.bind(this));
-
-    }
   }
     onWindowResize() {
       this.Camera.aspect = window.innerWidth / window.innerHeight;
@@ -554,13 +506,10 @@ class HuntersWorld {
 
 
     render () {
-      requestAnimationFrame(this.render.bind(this));
-      this.stats.update();
       
       this.Renderer.render(this.Scene, this.Camera);
       var delta = this.Clock.getDelta();
       
-      this.Controls.update(delta);
       for (let el of this.bullets){
         el.update(delta);
         let it = this.controlBulletCollision(el, this.items);
@@ -571,12 +520,11 @@ class HuntersWorld {
           this.removeBullet(el);
         }else if (el.way.length() > 20){
           this.removeBullet(el);
-          this.agents[0].digestion_signal += -10;
+          this.agents[0].digestion_signal += -0.99;
         }
       }
     }
 
-    // helper function to get closest colliding walls/items
     computeCollisions(eye, check_walls, check_items) {
       let minres = false;
 
@@ -731,13 +679,14 @@ class HuntersWorld {
       reward = rewards[0];
       let info = {};
       
-      // reward -= this.clock;
       let ret_data = [state, reward, done, info];
       if(this.clock % 1000 == 0){
         done = true;
         ret_data[2] = done;
         this.need_reset_env = 1;
+        this.agents[0].graphic_vis();
       }
+      this.render();
       return ret_data; 
     }
   }

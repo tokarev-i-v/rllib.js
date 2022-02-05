@@ -4,6 +4,18 @@
  * Environment characteristics:
  *  --type: continuous;
  */
+
+import * as tf from '@tensorflow/tfjs';
+import * as tfvis from '@tensorflow/tfjs-vis'
+import * as THREE from '../../src/jsm/threejs/three.module';
+import {ColladaLoader} from '../../src/jsm/threejs/ColladaLoader';
+import {FlyControls} from '../../src/jsm/threejs/FlyControls';
+import Stats from '../../src/jsm/threejs/stats.module';
+
+import {params_setter, getRandomArbitrary, getRandomInt} from '../../src/jsm/utils';
+import {Buffer, BoxSpace} from '../../src/jsm/types';
+import {MobileControls} from '../../src/jsm/controls';
+
 var CONSTANTS = {
   "TYPES": {
     "BULLET": 0,
@@ -32,7 +44,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 10.0;
+    this.reward = 0.99;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -69,7 +81,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -70;
+    this.reward = -0.99;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -136,7 +148,7 @@ class Bullet {
 /**
  * Agent from this world;
  */
-class HunterAgent3D{
+export class Agent{
   /**
    * 
    * @param {Object} opt 
@@ -147,9 +159,9 @@ class HunterAgent3D{
     let materials = [
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // right
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // left
-	    new THREE.MeshStandardMaterial( { map: THREE.ImageUtils.loadTexture('src/images/hunter_black_278.png')} ), // top
+	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // top
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // bottom
-	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // back
+	    new THREE.MeshStandardMaterial( { map: THREE.ImageUtils.loadTexture('./hunter_black_278.png') } ), // back
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } )  // front
 	];
 
@@ -163,10 +175,7 @@ class HunterAgent3D{
     this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
-    /**
-     * observation = data from detectors + world direction of agent
-     */
-    this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3 + 3])
+    this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
     console.log("Observation space shape: ", this.observation_space.shape);
     this.eyes = [];
     let r = 20;
@@ -177,7 +186,6 @@ class HunterAgent3D{
         let eye = new Eye(this, alpha, r);
         let mesh = eye.view;
         this.view.add(mesh);
-        this.view.add(eye.sphere_point);
         this.eyes.push(eye);
         alpha += dalpha;
     }
@@ -244,16 +252,12 @@ class HunterAgent3D{
         obs[i*3 + e.sensed_type] = e.sensed_proximity/e.max_range; // normalize to [0,1]
       }
     }
-    let wdir = new THREE.Vector3();
-    this.view.getWorldDirection(wdir);
-    obs = obs.concat([wdir.x, wdir.y, wdir.z]);
     return obs;
   }
 
   get_reward() {
     // compute reward 
     var proximity_reward = 0.0;
-    var timed_reward = -1.0;
     var num_eyes = this.eyes.length;
     for(var i=0;i<num_eyes;i++) {
       var e = this.eyes[i];
@@ -272,7 +276,7 @@ class HunterAgent3D{
     // agents like to eat good things
     var digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
-    var reward = proximity_reward + forward_reward + digestion_reward + timed_reward;   
+    var reward = proximity_reward + forward_reward + digestion_reward;   
     this.average_reward_window.add(reward);
     return reward;
   }
@@ -308,7 +312,7 @@ class HunterAgent3D{
  * @class Eye
  * It presents as agent's eye detector.
  */
-class Eye{
+export class Eye{
   /**
    * 
    * @param {THREE.Vector3} agent_pos_vec Vector that would use as src
@@ -317,30 +321,14 @@ class Eye{
    * @param {Number} r radius
    */
   constructor(a, alpha, r){
-
-    const geometry = new THREE.BufferGeometry();
-    const material = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 3 } );    
-    const positions = [];
-    const colors = [];
-
-    positions.push( 0, 0, 0 );
-    positions.push(Math.sin(Math.PI*alpha/180)*r,Math.cos(Math.PI*alpha/180)*r,  Math.PI/2)
-
-    
-    geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
-		// geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-    this._view = new THREE.Line(
-      geometry,
-      material
+    this._view = new THREE.Mesh(
+      new THREE.BoxBufferGeometry(1,1,10),
+      new THREE.MeshBasicMaterial({color: 0x111111})
     );
-    this.sphere_point = new THREE.Mesh(
-      new THREE.SphereBufferGeometry(0.1, 10, 10),
-      new THREE.MeshBasicMaterial({color:0x000000})
-    )
-    this.sphere_point.geometry.computeBoundingBox();
-    this.sphere_point.position.set(Math.sin(Math.PI*alpha/180)*r,Math.cos(Math.PI*alpha/180)*r,  Math.PI/2);
-    this.end_position = new THREE.Vector3(Math.sin(Math.PI*alpha/180)*r,Math.cos(Math.PI*alpha/180)*r,  Math.PI/2);
     /**setting Eye position and rotation */
+    this._view.position.x = Math.sin(Math.PI*alpha/180)*r;
+    this._view.position.z = Math.cos(Math.PI*alpha/180)*r;
+    this._view.rotation.x = Math.PI/2;
     this._view.geometry.computeBoundingBox();
     this.raycaster = new THREE.Raycaster();
     this.max_range = 20;
@@ -360,13 +348,12 @@ class Eye{
         return el.view;
     });
     let dst = new THREE.Vector3();
-    dst.setFromMatrixPosition( this.sphere_point.matrixWorld );
-    dst.sub(this.a.position.clone());
+    dst.setFromMatrixPosition( this._view.matrixWorld );
+    dst.add(this.a.position.clone().negate());
     dst.normalize();
     this.raycaster.set(this.a.position, dst);
     let intersects = this.raycaster.intersectObjects(targets);
     if (intersects.length > 0 && intersects[0].distance < this.max_range){
-      // intersects[0].object.material.color.setHex( 0x0000ff );
       return {obj: intersects[0].object, type: intersects[0].object._rl.type, dist: intersects[0].distance}
     } else {
       return null;
@@ -381,7 +368,7 @@ class Eye{
    * @class
    * World Contains all features.
    */
-class HuntersWorld3D {
+export class HungryWorld2D {
 
     /**
      * 
@@ -397,9 +384,8 @@ class HuntersWorld3D {
 
       this._default_params = {
         "items_count": 4000,
-        "W": 60,
-        "H": 60,
-        "D": 60,
+        "W": 200,
+        "H": 200,
         "algorithm": null,
         "UI": null
       };
@@ -446,14 +432,12 @@ class HuntersWorld3D {
     generateItem(){
       var x = getRandomArbitrary(-this.W, this.W);
       var y = getRandomArbitrary(-this.H, this.H);
-      var z = getRandomArbitrary(-this.D, this.D);
-
       var t = getRandomInt(1, 3); // food or poison (1 and 2)
       if (t == 1){
-        var it = new Food(new THREE.Vector3(x, y, z));
+        var it = new Food(new THREE.Vector3(x, 1, y));
       }
       else{
-        var it = new Poison(new THREE.Vector3(x, y, z));
+        var it = new Poison(new THREE.Vector3(x, 1, y));
       }
       this.items.push(it);
       this.Scene.add(it.view);
@@ -492,14 +476,14 @@ class HuntersWorld3D {
       this.Controls = new MobileControls({Camera: this.Camera, Object3D: this.CameraObj});      
       this.Scene.add(this.CameraObj);
     }else {
-      this.Controls = new THREE.FlyControls(this.Camera, document.getElementById("MainContainer"));
+      this.Controls = new FlyControls(this.Camera, document.getElementById("MainContainer"));
       this.Controls.movementSpeed = 13;
       this.Controls.rollSpeed = Math.PI / 8;
       this.Controls.autoForward = false;
       this.Controls.dragToLook = true;  
     }
 
-    this.Loader = new THREE.ColladaLoader();
+    this.Loader = new ColladaLoader();
 
     this.AmbientLight = new THREE.AmbientLight(0xFFFFFF, 0.9);
     this.Scene.add(this.AmbientLight);
@@ -507,6 +491,18 @@ class HuntersWorld3D {
     
     this.Clock = new THREE.Clock();
 
+    if(typeof(document) !== typeof(undefined)){
+      let TextureLoader = new THREE.TextureLoader();
+      TextureLoader.load("grass.png", function (tex) {
+          tex.wrapS = THREE.RepeatWrapping;
+          tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(100, 100);
+          let ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshBasicMaterial({map: tex, side:THREE.DoubleSide}));
+          ground.rotation.x -= Math.PI/2;
+          this.Scene.add(ground);
+      }.bind(this));
+
+    }
   }
     onWindowResize() {
       this.Camera.aspect = window.innerWidth / window.innerHeight;
@@ -568,7 +564,7 @@ class HuntersWorld3D {
           this.removeBullet(el);
         }else if (el.way.length() > 20){
           this.removeBullet(el);
-          this.agents[0].digestion_signal += -10;
+          this.agents[0].digestion_signal += -0.99;
         }
       }
     }
@@ -624,10 +620,8 @@ class HuntersWorld3D {
 
     tick(action) {
 
-      this.agents[0].rotX = action[0];
-      this.agents[0].rotY = action[1];
-
-      this.agents[0].speed = action[2];  
+      this.agents[0].rot = action[0];
+      this.agents[0].speed = action[1];  
 
       if (action[2] > 0.5){
         let bullet = this.agents[0].fire();
@@ -675,8 +669,7 @@ class HuntersWorld3D {
         v.normalize();
         v.multiplyScalar(a.speed);
         a.position.add(v);
-        a.rotation.y += a.rotY;
-        a.rotation.x += a.rotX;
+        a.rotation.y += a.rot;
         
         var res = this.computeCollisions(a.frontEye, true, false);
         if(res) {
@@ -688,9 +681,6 @@ class HuntersWorld3D {
         if(a.position.x>this.W/2)a.position.x=this.W/2;
         if(a.position.z< -this.H/2)a.position.z=-this.H/2;
         if(a.position.z>this.H/2)a.position.z=this.H/2;
-        if(a.position.y< -this.D/2)a.position.y=-this.D/2;
-        if(a.position.y>this.D/2)a.position.y=this.D/2;
-
       }
       
       for(var i=0,n=this.items.length;i<n;i++) {
@@ -735,7 +725,7 @@ class HuntersWorld3D {
       let info = {};
       
       let ret_data = [state, reward, done, info];
-      if(this.clock % 100 == 0){
+      if(this.clock % 1000 == 0){
         done = true;
         ret_data[2] = done;
         this.need_reset_env = 1;

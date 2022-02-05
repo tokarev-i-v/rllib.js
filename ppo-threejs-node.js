@@ -17,17 +17,17 @@ const jsdel =  new JSDOM(`<!DOCTYPE html><html><head></head><body>hello</body></
 global.window = jsdel.window;
 global.document = jsdel.window.document;
 
-import {HuntersWorld, Agent as HunterAgent} from "./src/jsm/envs/HuntersWorld/HuntersWorld_node.js";
+import {HungryWorld2D, Agent as HungryAgent} from "./src/jsm/envs/HungryWorld2D/HungryWorld2D_node.js";
 import {build_full_connected}  from './src/jsm/neuralnetworks_node.js';
 import {getWeightsFromModelToWorkerTransfer, setWeightsToModelByObject}  from './src/jsm/utils_node.js';
-let curretWorldClass = HuntersWorld;
+let curretWorldClass = HungryWorld2D;
 
 function runService(workerData) {
     return new Promise((resolve, reject) => {
 
       var PPOworker = new Worker("./src/jsm/agents/policy_gradients/ppo_node_worker.js", {workerData});
 
-      var a = new HunterAgent({eyes_count: 10});
+      var a = new HungryAgent2D({eyes_count: 10});
       let cur_nn = build_full_connected(a.observation_space.shape, [128, 128], a.action_space.shape, 'tanh', 'tanh');
       let weights_obj = getWeightsFromModelToWorkerTransfer(cur_nn);
       var w = new curretWorldClass({});

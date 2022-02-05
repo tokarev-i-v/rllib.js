@@ -20,20 +20,29 @@ Unity developers can use ML methods with [ml-agents](https://github.com/Unity-Te
 ## Install and start example
 Starting example:
 
-### Linux  
+### Linux, Windows
 ```bash
 git clone https://github.com/polyzer/rllib.js.git  
 npm i   
-npm run ppo_2d
 ```
 
-### Windows  
+### Hungry world 2D example using PPO algorithm in js
 ```bash
-git clone https://github.com/polyzer/rllib.js.git  
-npm i   
-npm run ppo_2d
+npm run ppo-hungry-js
+```
 
-### Node.js
+### Hungry world 2D example using PPO algorithm with Parcel
+```bash
+npm run ppo-hungry-jsm
+```
+
+### Hungry world example using PPO algorithm with Parcel
+```bash
+npm run ppo-hungry3d-jsm
+```
+
+
+### Hungry world example using PPO algorithm Node.js training
 You can start Node.js example with:
 ```bash
 npm run ppo_node

@@ -56,3 +56,24 @@ export class BoxSpace {
       });
     }
   }
+
+class Agent{
+    constructor(){}
+    get_observation(){
+
+    }
+    get_reward(){
+
+    }    
+
+}
+
+class Env{
+    constructor(action_space, observation_space){
+        this.action_space = action_space;
+        this.observation_space = observation_space;
+    }
+    reset(){}
+    sample(){}
+    step(){}
+}
