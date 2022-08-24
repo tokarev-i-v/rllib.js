@@ -20,6 +20,9 @@ Unity developers can use ML methods with [ml-agents](https://github.com/Unity-Te
 ## Install and start example
 Starting example:
 
+### Windows
+On Windows you need preinstalled MS Visual Studio Community edition for build 'gl' library.
+
 ### Linux, Windows
 ```bash
 git clone https://github.com/polyzer/rllib.js.git  
