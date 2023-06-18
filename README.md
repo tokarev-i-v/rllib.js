@@ -3,7 +3,7 @@ Reinforcement learning library with JavaScript.
 It provides some reinforcement learning algorithms and environments.  
 At this moment uses [TensorFlow.js](!https://github.com/tensorflow/tfjs) to implement functions and [three.js](!https://threejs.org/) for visualization.
 
-## [Live example](https://polyzer.github.io/rllib/build/ppo-threejs-hungry-jsm.html)
+## [Live example](https://tokarev-i-v.github.io/rllib/build/ppo-threejs-hungry-jsm.html)
  
 Visual library: [three.js](!https://threejs.org/)
 
@@ -19,6 +19,9 @@ Unity developers can use ML methods with [ml-agents](https://github.com/Unity-Te
 
 ## Install and start example
 Starting example:
+
+### Windows
+On Windows you need preinstalled MS Visual Studio Community edition for build 'gl' library.
 
 ### Linux, Windows
 ```bash
