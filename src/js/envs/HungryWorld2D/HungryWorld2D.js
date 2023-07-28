@@ -34,7 +34,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 9.0;
+    this.reward = 0.1;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -71,7 +71,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -70000;
+    this.reward = -0.1;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -273,7 +273,7 @@ class HungryAgent{
     if (reward > 0){
       this.hungry = 0;
     } else {
-      this.hungry -= 10;
+      this.hungry = -0.01;
     }
     reward += this.hungry;
     this.average_reward_window.add(reward);
@@ -493,11 +493,25 @@ class HungryWorld2D {
       this.Controls = new MobileControls({Camera: this.Camera, Object3D: this.CameraObj});      
       this.Scene.add(this.CameraObj);
     }else {
-      this.Controls = new THREE.FlyControls(this.Camera, document.getElementById("MainContainer"));
-      this.Controls.movementSpeed = 13;
-      this.Controls.rollSpeed = Math.PI / 8;
-      this.Controls.autoForward = false;
-      this.Controls.dragToLook = true;  
+      // this.Controls = new THREE.FlyControls(this.Camera, document.getElementById("MainContainer"));
+      // this.Controls.movementSpeed = 13;
+      // this.Controls.rollSpeed = Math.PI / 8;
+      // this.Controls.autoForward = false;
+      // this.Controls.dragToLook = true;  
+
+      this.Controls = new THREE.MapControls( this.Camera, document.getElementById("MainContainer") );
+
+      //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
+
+      this.Controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+      this.Controls.dampingFactor = 0.05;
+
+      this.Controls.screenSpacePanning = false;
+
+      this.Controls.minDistance = 100;
+      this.Controls.maxDistance = 500;
+
+      this.Controls.maxPolarAngle = Math.PI / 2;
     }
 
     this.Loader = new THREE.ColladaLoader();
