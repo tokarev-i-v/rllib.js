@@ -34,7 +34,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 0.1;
+    this.reward = 1;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -71,7 +71,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -0.1;
+    this.reward = -3;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -163,7 +163,8 @@ class HungryAgent{
     this.max_action = 1.0;
 
     this.hungry = 0;
-
+    this.greens_count = 0;
+    this.yellows_count = 0;
     this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
     this.eyes_count = opt.eyes_count;
@@ -199,7 +200,16 @@ class HungryAgent{
     this.speed = 0.0;
     this.average_reward_window = new Buffer(10, 1000);
     this.displayHistoryData = [];
+    this.displayHistoryGreensData = [];
+    this.displayHistoryYellowsData = [];
+    this.chartsGreensYellowsNames = ['Greens count', 'Yellows count'];
+    this.chartsGYCNames = ['Greens/Yellows coeff'];
+    this.chartsMRNames = ['Mean Reward'];
+    this.displayHistoryEatenCoefficientData = [];
     this.surface = { name: 'Mean reward', tab: 'Charts' };
+    this.greens_surface = { name: 'Greens count', tab: 'Charts' };
+    this.yellows_surface = { name: 'Yellows count', tab: 'Charts' };
+    this.eaten_coefficient_surface = { name: 'Eaten Green/Yellow coefficient', tab: 'Charts' };
     setInterval(this.graphic_vis.bind(this), 1000);
   }
   
@@ -221,12 +231,22 @@ class HungryAgent{
    * Updates graphics
    */
   graphic_vis(){
-    if (this.displayHistoryData.length > 1100){
+    if (this.displayHistoryData.length > 200){
       this.displayHistoryData.splice(0,100);
+      this.displayHistoryYellowsData.splice(0,100);
+      this.displayHistoryGreensData.splice(0,100);
+      this.displayHistoryEatenCoefficientData.splice(0, 100);
     }
     this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
-    let data = {values: this.displayHistoryData};
+    let data = {values: this.displayHistoryData, series: this.chartsMRNames};
     tfvis.render.linechart(this.surface, data);
+    this.displayHistoryGreensData.push({"x": this.age, "y": this.greens_count});
+    this.displayHistoryYellowsData.push({"x": this.age, "y": this.yellows_count});
+    data = {values: [this.displayHistoryGreensData, this.displayHistoryYellowsData], series: this.chartsGreensYellowsNames};
+    tfvis.render.linechart(this.greens_surface, data);
+    this.displayHistoryEatenCoefficientData.push({"x": this.age, "y": this.greens_count/(this.yellows_count+1)});
+    data = {values: [this.displayHistoryEatenCoefficientData], series: this.chartsGYCNames};
+    tfvis.render.linechart(this.eaten_coefficient_surface, data);
   }
   /**
    * 
@@ -493,11 +513,6 @@ class HungryWorld2D {
       this.Controls = new MobileControls({Camera: this.Camera, Object3D: this.CameraObj});      
       this.Scene.add(this.CameraObj);
     }else {
-      // this.Controls = new THREE.FlyControls(this.Camera, document.getElementById("MainContainer"));
-      // this.Controls.movementSpeed = 13;
-      // this.Controls.rollSpeed = Math.PI / 8;
-      // this.Controls.autoForward = false;
-      // this.Controls.dragToLook = true;  
 
       this.Controls = new THREE.MapControls( this.Camera, document.getElementById("MainContainer") );
 
@@ -508,7 +523,7 @@ class HungryWorld2D {
 
       this.Controls.screenSpacePanning = false;
 
-      this.Controls.minDistance = 100;
+      this.Controls.minDistance = 10;
       this.Controls.maxDistance = 500;
 
       this.Controls.maxPolarAngle = Math.PI / 2;
@@ -716,8 +731,14 @@ class HungryWorld2D {
             
             let rescheck = this.computeCollisions(a.frontEye, true, false);
             if(!rescheck) { 
-              if(it.type === 1) a.digestion_signal += it.reward;
-              if(it.type === 2) a.digestion_signal += it.reward;
+              if(it.type === 1) {
+                a.digestion_signal += it.reward;
+                a.greens_count += 1;
+              }
+              if(it.type === 2) {
+                a.digestion_signal += it.reward;
+                a.yellows_count += 1;
+              }
               this.removeItem(it);
               i--;
               n--;
