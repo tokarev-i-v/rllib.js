@@ -309,7 +309,7 @@ class PPO{
     async setPolicyModel(policy_nn){
         this.policy_nn = policy_nn;
     }    
-     async setValueModel(value_nn){
+    async setValueModel(value_nn){
         this.value_nn = value_nn;
     }    
     async train(){

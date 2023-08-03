@@ -12,6 +12,7 @@
   <script src='src/js/threejs/stats.min.js'></script>
   <script src='src/js/threejs/OrbitControls.js'></script>
   <script src='src/js/threejs/ColladaLoader.js'></script>
+  <script src='src/js/threejs/DeviceOrientationControls.js'></script>
   <script src='src/js/controls.js'></script>
   <script src='src/js/neuralnetworks.js'></script>
   <script src='src/js/types.js'></script>
@@ -65,11 +66,11 @@ PPOworker.onmessage = function(e){
 
     }
     /*Answer from worker that policy weights have been set*/
-    if(e.data.msg_type === "load_policy_weigths_by_path_answer"){
+    if(e.data.msg_type === "loaded_policy_weigths"){
         alert('Policy weights have been set');
     }
     /*Answer from worker that value function weights have been set*/
-    if(e.data.msg_type === "load_value_weigths_by_path_answer"){
+    if(e.data.msg_type === "loaded_value_weigths"){
         alert('Value weights have been set');
     }
 }

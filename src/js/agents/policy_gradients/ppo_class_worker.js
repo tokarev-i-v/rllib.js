@@ -5,10 +5,12 @@ importScripts("https://cdnjs.cloudflare.com/ajax/libs/tensorflow/3.8.0/tf.min.js
 importScripts('../../neuralnetworks.js')
 importScripts('../../utils.js')
 importScripts("./PPO_class.js")
+
 var agent = {
     observation_space: [],
     action_space: []
 };
+
 var env = {
     step: makeStep,
     n_obs: [],
@@ -31,7 +33,6 @@ function get_episode_length(){
 function env_reset(){
     return 0;
 }
-
 
 self.env = env;
 function makeStep(){
@@ -59,7 +60,7 @@ function start(e){
         if (policy_nn){
             model = create_model_by_serialized_data(policy_nn);
         }
-        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:1e-3, ac_lr:1e-3, gamma:0.99, lam:0.95, steps_per_env:2000, 
+        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:1e-4, ac_lr:1e-4, gamma:0.99, lam:0.95, steps_per_env:2000, 
             number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:128, policy_nn: model});
         self.ppo_obj.train();
 }
@@ -74,19 +75,19 @@ async function getPolicyWeigts(){
     });
 }
 
-async function loadPolicyModelByPath(weights_path){
-    let nn = await tf.loadLayersModel(weights_path);
-    let pw = await self.ppo_obj.setPolicyModel(nn);
+async function loadPolicyModel(pw){
+    let nn = create_model_by_serialized_data(pw);
+    await self.ppo_obj.setPolicyModel(nn);
     self.postMessage({
-        msg_type: "load_policy_weigths_by_path_answer"
+        msg_type: "loaded_policy_weigths"
     });
 }
 
-async function loadValueModelByPath(weights_path){
-    let nn = await tf.loadLayersModel(weights_path);
-    let pw = await self.ppo_obj.setValueModel(nn);
+async function loadValueModel(vw){
+    let nn = create_model_by_serialized_data(vw);
+    await self.ppo_obj.setValueModel(nn);
     self.postMessage({
-        msg_type: "load_value_weigths_by_path_answer"
+        msg_type: "loaded_value_weights"
     });
 }
 
@@ -104,12 +105,12 @@ tf.setBackend("webgl").then(()=>{
         if (e.data.msg_type === "get_policy_weights"){
             getPolicyWeigts();
         }
-        if (e.data.msg_type === "load_weigths_by_path"){  
-            if (e.data.policy_weights_path){
-                loadPolicyModelByPath(e.data.policy_weights_path)
+        if (e.data.msg_type === "set_weigths"){  
+            if (e.data.policy_weights){
+                loadPolicyModel(e.data.policy_weights)
             }
-            if (e.data.value_weights_path){
-                loadValueModelByPath(e.data.value_weights_path)
+            if (e.data.value_weights){
+                loadValueModel(e.data.value_weights)
             }
         }        
     }    
