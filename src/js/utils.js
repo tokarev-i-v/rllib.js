@@ -175,3 +175,26 @@ function create_model_by_serialized_data(model_weight_data){
     }
     throw Error("Model must be specified.")
 }
+
+function create_cnn_model_by_serialized_data(model_weight_data){
+    if(model_weight_data){
+        let model = tf.sequential();
+        for(let layer of model_weight_data.slice(1, model_weight_data.length)){
+            let layer_name = layer.name;
+            let layer_shape = layer.shape;
+            let layer_activation = layer.activation;
+            model.add(tf.layers.dense({units: layer_shape, activation: layer_activation}));
+        }
+        for (let layer_number in model_weight_data){
+            let layer_weights = model_weight_data[layer_number].layer_weights;
+            if (layer_weights && layer_weights.length > 0){
+                for (let i in layer_weights){
+                    layer_weights[i] = tf.tensor(layer_weights[i]);
+                }
+                model.layers[layer_number].setWeights(model_weight_data[layer_number].layer_weights);
+            }
+        }
+        return model;
+    }
+    throw Error("Model must be specified.")
+}

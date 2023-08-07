@@ -1,11 +1,12 @@
 /**
- * In this env agent's target learn to eat greens as soon as possible.
+ * HungryWorld env.
  * 
  * Environment characteristics:
- *  --type: continuous;
+ *  action space: continuous;
+ *  observation space: continuous;
  */
 
-var CONSTANTS = {
+let CONSTANTS = {
   "TYPES": {
     "BULLET": 0,
     "POISON": 1,
@@ -16,7 +17,7 @@ var CONSTANTS = {
 
 /**
  * Class describes targets, that must be eaten by agent.
- * Charasteristics:
+ * :
  *  --reward: 0.99
  */
 class Food {
@@ -33,7 +34,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 9.0;
+    this.reward = 1;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -70,7 +71,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -70;
+    this.reward = -3;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -137,7 +138,7 @@ class Bullet {
 /**
  * Agent from this world;
  */
-class Agent{
+class HungryAgent{
   /**
    * 
    * @param {Object} opt 
@@ -152,20 +153,36 @@ class Agent{
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // bottom
 	    new THREE.MeshStandardMaterial( { map: THREE.ImageUtils.loadTexture('src/images/hunter_black_278.png') } ), // back
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } )  // front
-	];
+  	];
+    
+    this.Container = document.createElement('div');
+
+    this.Renderer = new THREE.WebGLRenderer();
+    this.Renderer.setSize(64, 64);
+    this.Container.appendChild(this.Renderer.domElement);
+    this.Container.setAttribute("style", "position: absolute; z-index:100; left: 200px;");
+    
+    document.body.appendChild(this.Container);
+
+    this.Scene = opt.Scene;
+    this.Camera = new THREE.PerspectiveCamera(45, 64 / 64, 1, 1000);    
 
     this._view = new THREE.Mesh(
       new THREE.BoxBufferGeometry(this.rad,this.rad,this.rad),
       new THREE.MultiMaterial( materials )
     );
+    this._view.add(this.Camera);
+
     this.min_action = -1.0;
     this.max_action = 1.0;
 
+    this.hungry = 0;
+    this.greens_count = 0;
+    this.yellows_count = 0;
     this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
-    this.eyes_count = opt.eyes_count;
-    this.observation_space = new BoxSpace(-10000000, 100000000, [this.eyes_count * 3])
-    console.log("Observation space shape: ", this.observation_space.shape);
+    this.observation_space = new BoxSpace(-10000000, 100000000, 64*64*3);
+    this.eyes_count = 1;
     this.eyes = [];
     let r = 20;
     let dalpha = 10;
@@ -178,15 +195,17 @@ class Agent{
       this.view.add(eye.sphere_point);
       this.eyes.push(eye);
       alpha += dalpha;
-  }
+    }
     this._frontEye = null;
     if(this.eyes.length % 2 === 0){
       this._frontEye = this.eyes[Math.round(this.eyes.length/2)];
     }else {
       this._frontEye = this.eyes[Math.round(this.eyes.length/2)-1];
     }
+
+    console.log("Observation space shape: ", this.observation_space.shape);
     if (opt.algo){
-      this.brain = new opt.algo({num_states: this.eyes.length * 3, num_actions: this.action_space.length});
+      this.brain = new opt.algo({imgshape: [64,64,3], num_actions: this.action_space.length});
     }
     
     this.reward_bonus = 0.0;
@@ -196,7 +215,16 @@ class Agent{
     this.speed = 0.0;
     this.average_reward_window = new Buffer(10, 1000);
     this.displayHistoryData = [];
+    this.displayHistoryGreensData = [];
+    this.displayHistoryYellowsData = [];
+    this.chartsGreensYellowsNames = ['Greens count', 'Yellows count'];
+    this.chartsGYCNames = ['Greens/Yellows coeff'];
+    this.chartsMRNames = ['Mean Reward'];
+    this.displayHistoryEatenCoefficientData = [];
     this.surface = { name: 'Mean reward', tab: 'Charts' };
+    this.greens_surface = { name: 'Greens count', tab: 'Charts' };
+    this.yellows_surface = { name: 'Yellows count', tab: 'Charts' };
+    this.eaten_coefficient_surface = { name: 'Eaten Green/Yellow coefficient', tab: 'Charts' };
     setInterval(this.graphic_vis.bind(this), 1000);
   }
   
@@ -218,55 +246,59 @@ class Agent{
    * Updates graphics
    */
   graphic_vis(){
-    if (this.displayHistoryData.length > 1100){
+    if (this.displayHistoryData.length > 200){
       this.displayHistoryData.splice(0,100);
+      this.displayHistoryYellowsData.splice(0,100);
+      this.displayHistoryGreensData.splice(0,100);
+      this.displayHistoryEatenCoefficientData.splice(0, 100);
     }
     this.displayHistoryData.push({"x": this.age, "y": this.average_reward_window.get_average()});
-    let data = {values: this.displayHistoryData};
+    let data = {values: this.displayHistoryData, series: this.chartsMRNames};
     tfvis.render.linechart(this.surface, data);
+    this.displayHistoryGreensData.push({"x": this.age, "y": this.greens_count});
+    this.displayHistoryYellowsData.push({"x": this.age, "y": this.yellows_count});
+    data = {values: [this.displayHistoryGreensData, this.displayHistoryYellowsData], series: this.chartsGreensYellowsNames};
+    tfvis.render.linechart(this.greens_surface, data);
+    this.displayHistoryEatenCoefficientData.push({"x": this.age, "y": this.greens_count/(this.yellows_count+1)});
+    data = {values: [this.displayHistoryEatenCoefficientData], series: this.chartsGYCNames};
+    tfvis.render.linechart(this.eaten_coefficient_surface, data);
   }
   /**
    * 
    */
   get_observation() {
-    let num_eyes = this.eyes.length;
-    let obs = new Array(num_eyes * 3);
-    for(let i=0;i<num_eyes;i++) {
-      let e = this.eyes[i];
-      obs[i*3] = 1.0;
-      obs[i*3+1] = 1.0;
-      obs[i*3+2] = 1.0;
-      if(e.sensed_type !== -1) {
-        // sensed_type is 0 for wall, 1 for food and 2 for poison.
-        // lets do a 1-of-k encoding into the input array
-        obs[i*3 + e.sensed_type] = e.sensed_proximity/e.max_range; // normalize to [0,1]
+    this.Renderer.render(this.Scene, this.Camera);
+    let gl = this.Renderer.getContext("webgl", {preserveDrawingBuffer: true});
+    let pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 3);
+    gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGB, gl.UNSIGNED_BYTE, pixels);
+    let rearr = [];
+    for (let i = 0; i < gl.drawingBufferWidth; i++){
+      rearr.push([]);
+      for (let j = 0; j < gl.drawingBufferHeight; j++){
+        rearr[i].push([pixels[i*3*gl.drawingBufferWidth+j*3+0], pixels[i*3*gl.drawingBufferWidth+j*3+1], pixels[i*3*gl.drawingBufferWidth+j*3+2]]);
       }
     }
-    return obs;
+    return rearr;
   }
 
   get_reward() {
     // compute reward 
-    var proximity_reward = 0.0;
-    var num_eyes = this.eyes.length;
-    for(var i=0;i<num_eyes;i++) {
-      var e = this.eyes[i];
-      // Here could be
-      // proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 0.0;
-      // proximity_reward += e.sensed_type === 1 ? 1 - e.sensed_proximity : 0.0;
-      // proximity_reward += e.sensed_type === 2 ? -(1 - e.sensed_proximity) : 0.0;
-    }
-    // console.log("num_eyes: %s ", num_eyes);    
-    proximity_reward = proximity_reward/num_eyes;
+    let proximity_reward = 0.0;
     
     // agents like to go straight forward
-    var forward_reward = 0.0;
+    let forward_reward = 0.0;
     if(this.actionix === 0 && proximity_reward > 0.75) forward_reward = 0.1 * proximity_reward;
     
     // agents like to eat good things
-    var digestion_reward = this.digestion_signal;
+    let digestion_reward = this.digestion_signal;
     this.digestion_signal = 0.0;
-    var reward = proximity_reward + forward_reward + digestion_reward;   
+    let reward = proximity_reward + forward_reward + digestion_reward;   
+    if (reward > 0){
+      this.hungry = 0;
+    } else {
+      this.hungry = -0.01;
+    }
+    reward += this.hungry;
     this.average_reward_window.add(reward);
     return reward;
   }
@@ -367,9 +399,6 @@ class Eye{
     }
   }
 }
-  
-
-
 
   /**
    * @class
@@ -437,14 +466,15 @@ class HungryWorld2D {
      * generates food and poison
      */
     generateItem(){
-      var x = getRandomArbitrary(-this.W, this.W);
-      var y = getRandomArbitrary(-this.H, this.H);
-      var t = getRandomInt(1, 3); // food or poison (1 and 2)
+      let x = getRandomArbitrary(-this.W, this.W);
+      let y = getRandomArbitrary(-this.H, this.H);
+      let t = getRandomInt(1, 3); // food or poison (1 and 2)
+      let it = null;
       if (t == 1){
-        var it = new Food(new THREE.Vector3(x, 1, y));
+        it = new Food(new THREE.Vector3(x, 1, y));
       }
       else{
-        var it = new Poison(new THREE.Vector3(x, 1, y));
+        it = new Poison(new THREE.Vector3(x, 1, y));
       }
       this.items.push(it);
       this.Scene.add(it.view);
@@ -478,16 +508,40 @@ class HungryWorld2D {
     let check = false;
     (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
     if (check){
-      this.CameraObj = new THREE.Object3D();
-      this.CameraObj.add(this.Camera);
-      this.Controls = new MobileControls({Camera: this.Camera, Object3D: this.CameraObj});      
-      this.Scene.add(this.CameraObj);
+      // this.CameraObj = new THREE.Object3D();
+      // this.CameraObj.add(this.Camera);
+      // this.Controls = new MobileControls({Camera: this.Camera, Object3D: this.CameraObj, Hammer: Hammer});      
+      // this.Scene.add(this.CameraObj);
+
+      this.Controls = new THREE.MapControls( this.Camera, document.getElementById("MainContainer") );
+
+      //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
+
+      this.Controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+      this.Controls.dampingFactor = 0.05;
+
+      this.Controls.screenSpacePanning = false;
+
+      this.Controls.minDistance = 10;
+      this.Controls.maxDistance = 500;
+
+      this.Controls.maxPolarAngle = Math.PI / 2;
+
     }else {
-      this.Controls = new THREE.FlyControls(this.Camera, document.getElementById("MainContainer"));
-      this.Controls.movementSpeed = 13;
-      this.Controls.rollSpeed = Math.PI / 8;
-      this.Controls.autoForward = false;
-      this.Controls.dragToLook = true;  
+
+      this.Controls = new THREE.MapControls( this.Camera, document.getElementById("MainContainer") );
+
+      //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
+
+      this.Controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+      this.Controls.dampingFactor = 0.05;
+
+      this.Controls.screenSpacePanning = false;
+
+      this.Controls.minDistance = 10;
+      this.Controls.maxDistance = 500;
+
+      this.Controls.maxPolarAngle = Math.PI / 2;
     }
 
     this.Loader = new THREE.ColladaLoader();
@@ -558,7 +612,7 @@ class HungryWorld2D {
       this.stats.update();
       
       this.Renderer.render(this.Scene, this.Camera);
-      var delta = this.Clock.getDelta();
+      let delta = this.Clock.getDelta();
       
       this.Controls.update(delta);
       for (let el of this.bullets){
@@ -569,7 +623,7 @@ class HungryWorld2D {
           if(it.type === 2) this.agents[0].digestion_signal += it.reward;
           this.removeItem(it);
           this.removeBullet(el);
-        }else if (el.way.length() > 20){
+        } else if (el.way.length() > 20){
           this.removeBullet(el);
           this.agents[0].digestion_signal += -10;
         }
@@ -609,12 +663,6 @@ class HungryWorld2D {
       return ret;
     }
 
-
-    start() {
-      requestAnimationFrame(this.start.bind(this));
-      this.step();
-    }
-
     addBullet(bullet){
       this.bullets.push(bullet);
       this.Scene.add(bullet.view);
@@ -630,10 +678,10 @@ class HungryWorld2D {
       this.agents[0].rot = action[0];
       this.agents[0].speed = action[1];  
 
-      if (action[2] > 0.5){
-        let bullet = this.agents[0].fire();
-        this.addBullet(bullet);
-      }
+      // if (action[2] > 0.5){
+      //   let bullet = this.agents[0].fire();
+      //   this.addBullet(bullet);
+      // }
       if (this.need_reset_env){
         this.reset();
         this.need_reset_env = 0;
@@ -642,46 +690,21 @@ class HungryWorld2D {
 
       // tick the environment
       this.clock++;
-      
-      // fix input to all agents based on environment
-      // process eyes
-      this.collpoints = [];
-      for(var i=0,n=this.agents.length;i<n;i++) {
-        var a = this.agents[i];
-        for(var ei=0,ne=a.eyes.length;ei<ne;ei++) {
-          var e = a.eyes[ei];
-          var res = this.computeCollisions(e, true, true);
-          if(res) {
-            // eye collided with wall
-            e.sensed_proximity = res.dist;
-            e.sensed_type = res.type;
-          } else {
-            e.sensed_proximity = e.max_range;
-            e.sensed_type = -1;
-          }
-        }
-      }
       let states = [];
       // let the agents behave in the world based on their input
-      for(var i=0,n=this.agents.length;i<n;i++) {
+      for(let i=0,n=this.agents.length;i<n;i++) {
         states.push(this.agents[i].get_observation());
       }
       
       // apply outputs of agents on evironment
-      for(var i=0,n=this.agents.length;i<n;i++) {
-        var a = this.agents[i];
-        // var v = a.position.clone();
-        var v = new THREE.Vector3();
+      for(let i=0,n=this.agents.length;i<n;i++) {
+        let a = this.agents[i];
+        let v = new THREE.Vector3();
         a._view.getWorldDirection(v);
         v.normalize();
         v.multiplyScalar(a.speed);
         a.position.add(v);
         a.rotation.y += a.rot;
-        
-        var res = this.computeCollisions(a.frontEye, true, false);
-        if(res) {
-          a.position = a.op;
-        }
         
         // handle boundary conditions
         if(a.position.x< -this.W/2)a.position.x=-this.W/2;
@@ -690,20 +713,26 @@ class HungryWorld2D {
         if(a.position.z>this.H/2)a.position.z=this.H/2;
       }
       
-      for(var i=0,n=this.items.length;i<n;i++) {
-        var it = this.items[i];
+      for(let i=0,n=this.items.length;i<n;i++) {
+        let it = this.items[i];
         it.age += 1;
         
         // see if some agent gets lunch
-        for(var j=0,m=this.agents.length;j<m;j++) {
-          var a = this.agents[j];
-          var d = a.position.distanceTo(it.position);
+        for(let j=0,m=this.agents.length;j<m;j++) {
+          let a = this.agents[j];
+          let d = a.position.distanceTo(it.position);
           if(d < it.rad + a.rad) {
             
-            var rescheck = this.computeCollisions(a.frontEye, true, false);
+            let rescheck = this.computeCollisions(a.frontEye, true, false);
             if(!rescheck) { 
-              if(it.type === 1) a.digestion_signal += it.reward;
-              if(it.type === 2) a.digestion_signal += it.reward;
+              if(it.type === 1) {
+                a.digestion_signal += it.reward;
+                a.greens_count += 1;
+              }
+              if(it.type === 2) {
+                a.digestion_signal += it.reward;
+                a.yellows_count += 1;
+              }
               this.removeItem(it);
               i--;
               n--;
@@ -722,7 +751,7 @@ class HungryWorld2D {
         this.generateItem();
       }
       let rewards = [];
-      for(var i=0,n=this.agents.length;i<n;i++) {
+      for(let i=0,n=this.agents.length;i<n;i++) {
         rewards.push(this.agents[i].get_reward());
       }
       done = 0;
@@ -731,7 +760,6 @@ class HungryWorld2D {
       reward = rewards[0];
       let info = {};
       
-      // reward -= this.clock;
       let ret_data = [state, reward, done, info];
       if(this.clock % 1000 == 0){
         done = true;
