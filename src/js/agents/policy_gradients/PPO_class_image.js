@@ -282,7 +282,7 @@ class PPO{
         this.act_smp = act_smp_cont;
         this.p_log = get_p_log_cont;
 
-        this.value_nn = build_cnn_value(this.imgshape, [64, 64], 'tanh', 'tanh');
+        this.value_nn = build_cnn_value(this.imgshape, [64], 'tanh', 'tanh');
         this.p_opt = tf.train.adam(this.ac_lr);
         this.v_opt = tf.train.adam(this.cr_lr);
     }

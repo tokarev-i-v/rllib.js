@@ -165,13 +165,15 @@ class HungryAgent{
     document.body.appendChild(this.Container);
 
     this.Scene = opt.Scene;
-    this.Camera = new THREE.PerspectiveCamera(45, 64 / 64, 1, 1000);    
-
+    this.Camera = new THREE.PerspectiveCamera(45, 64 / 64, 1, 10);    
     this._view = new THREE.Mesh(
       new THREE.BoxBufferGeometry(this.rad,this.rad,this.rad),
       new THREE.MultiMaterial( materials )
     );
+    this.helper = new THREE.CameraHelper( this.Camera );
     this._view.add(this.Camera);
+    this.Scene.add(this.helper);
+    this.Camera.rotation.y -= Math.PI;
 
     this.min_action = -1.0;
     this.max_action = 1.0;
@@ -181,7 +183,7 @@ class HungryAgent{
     this.yellows_count = 0;
     this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
-    this.observation_space = new BoxSpace(-10000000, 100000000, 64*64*3);
+    this.observation_space = new BoxSpace(-1, 1, 64*64*3);
     this.eyes_count = 1;
     this.eyes = [];
     let r = 20;
@@ -275,7 +277,7 @@ class HungryAgent{
     for (let i = 0; i < gl.drawingBufferWidth; i++){
       rearr.push([]);
       for (let j = 0; j < gl.drawingBufferHeight; j++){
-        rearr[i].push([pixels[i*3*gl.drawingBufferWidth+j*3+0], pixels[i*3*gl.drawingBufferWidth+j*3+1], pixels[i*3*gl.drawingBufferWidth+j*3+2]]);
+        rearr[i].push([pixels[i*3*gl.drawingBufferWidth+j*3+0]/255.0, pixels[i*3*gl.drawingBufferWidth+j*3+1]/255.0, pixels[i*3*gl.drawingBufferWidth+j*3+2]/255.0]);
       }
     }
     return rearr;

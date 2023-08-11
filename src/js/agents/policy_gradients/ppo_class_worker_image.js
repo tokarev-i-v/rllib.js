@@ -60,9 +60,9 @@ function start(e){
         if (!policy_nn){
             model = create_cnn_model_by_serialized_data(policy_nn);
         } else {
-            model = build_cnn(imgshape, [64, 64], act_dim[0], 'tanh', 'tanh');
+            model = build_cnn(imgshape, [64], act_dim[0], 'tanh', 'tanh');
         }
-        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64,64], cr_lr:1e-3, ac_lr:1e-3, gamma:0.99, lam:0.95, steps_per_env:2000, 
+        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64], cr_lr:1e-3, ac_lr:1e-3, gamma:0.99, lam:0.95, steps_per_env:2000, 
             number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:128, policy_nn: model, imgshape: imgshape});
         self.ppo_obj.train();
 }

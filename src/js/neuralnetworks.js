@@ -33,38 +33,42 @@ function build_cnn(input_shape, hiddens_config, output_shape, activation='relu',
     let model = tf.sequential();    
     model.add(tf.layers.conv2d({
         inputShape: [input_shape[0], input_shape[1], input_shape[2]],
-        kernelSize: 3,
+        kernelSize: 4,
         filters: 8,
-        padding: 'same',
-        activation: 'relu',
-        kernelInitializer: 'varianceScaling'
-        }));
-
-    // x = tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]}).apply(x);
-    model.add(tf.layers.flatten());
-    for(let l=0; l < hiddens_config.length; l++){
-        model.add(tf.layers.dense({units:hiddens_config[l], activation:activation}));
-    }
+        activation: 'relu'
+    }));
+    model.add(tf.layers.conv2d({
+        kernelSize: 16,
+        filters: 8,
+        activation: 'relu'
+    }));
+    model.add(tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]}));
+    model.add(tf.layers.flatten({activation:'relu'}));
+    // for(let l=0; l < hiddens_config.length; l++){
+    //     model.add(tf.layers.dense({units:hiddens_config[l], activation:activation}));
+    // }
     model.add(tf.layers.dense({units: output_shape, activation: last_activation}));
     return model
 }
 
 function build_cnn_value(input_shape, hiddens_config, activation='relu', last_activation='relu'){
-    let model = tf.sequential();    
+    let model = tf.sequential();
     model.add(tf.layers.conv2d({
         inputShape: [input_shape[0], input_shape[1], input_shape[2]],
-        kernelSize: 3,
-        filters: 8,
-        padding: 'same',
-        activation: 'relu',
-        kernelInitializer: 'varianceScaling'
-        }));
-
-    // x = tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]}).apply(x);
-    model.add(tf.layers.flatten());
-    for(let l=0; l < hiddens_config.length; l++){
-        model.add(tf.layers.dense({units:hiddens_config[l], activation:activation}));
-    }
+        kernelSize: 4,
+        filters: 4,
+        activation: 'relu'
+    }));
+    model.add(tf.layers.conv2d({
+        kernelSize: 16,
+        filters: 4,
+        activation: 'relu'
+    }));
+    model.add(tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]}));
+    model.add(tf.layers.flatten({activation:'relu'}));
+    // for(let l=0; l < hiddens_config.length; l++){
+    //     model.add(tf.layers.dense({units:hiddens_config[l], activation:activation}));
+    // }
     model.add(tf.layers.dense({units: 1, activation: last_activation}));
     return model
 }
