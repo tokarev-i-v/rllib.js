@@ -33,7 +33,7 @@ var PPOworker = new Worker("./src/js/agents/policy_gradients/ppo_class_worker.js
 /*Create agent object*/
 var a = new HungryAgent({eyes_count: 10});
 /*Create neural network*/
-let cur_nn = build_full_connected(a.observation_space.shape, [64, 64], a.action_space.shape, 'tanh', 'tanh');
+let cur_nn = build_full_connected(a.observation_space.shape, [32, 32], a.action_space.shape[0], 'tanh', 'tanh');
 /*Create neural network*/
 let weights_obj = get_serialized_layers_data(cur_nn);
 

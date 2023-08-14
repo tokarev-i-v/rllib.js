@@ -145,7 +145,7 @@ class HungryAgent{
    */
   constructor(opt){
     this.rad = 2;
-
+    this.imgshape = opt.imgshape;
     let materials = [
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // right
 	    new THREE.MeshStandardMaterial( { color: 0x000000 } ), // left
@@ -158,14 +158,14 @@ class HungryAgent{
     this.Container = document.createElement('div');
 
     this.Renderer = new THREE.WebGLRenderer();
-    this.Renderer.setSize(64, 64);
+    this.Renderer.setSize(this.imgshape[0], this.imgshape[1]);
     this.Container.appendChild(this.Renderer.domElement);
     this.Container.setAttribute("style", "position: absolute; z-index:100; left: 200px;");
     
     document.body.appendChild(this.Container);
 
     this.Scene = opt.Scene;
-    this.Camera = new THREE.PerspectiveCamera(45, 64 / 64, 1, 10);    
+    this.Camera = new THREE.PerspectiveCamera(45, this.imgshape[0] / this.imgshape[1], 1, 10);    
     this._view = new THREE.Mesh(
       new THREE.BoxBufferGeometry(this.rad,this.rad,this.rad),
       new THREE.MultiMaterial( materials )
@@ -183,7 +183,7 @@ class HungryAgent{
     this.yellows_count = 0;
     this.position.y = 1;
     this.action_space = new BoxSpace(this.min_action,this.max_action, [3]);
-    this.observation_space = new BoxSpace(-1, 1, 64*64*3);
+    this.observation_space = new BoxSpace(-1, 1, imgshape[0]*this.imgshape[1]*this.imgshape[2]);
     this.eyes_count = 1;
     this.eyes = [];
     let r = 20;
@@ -207,7 +207,7 @@ class HungryAgent{
 
     console.log("Observation space shape: ", this.observation_space.shape);
     if (opt.algo){
-      this.brain = new opt.algo({imgshape: [64,64,3], num_actions: this.action_space.length});
+      this.brain = new opt.algo({imgshape: this.imgshape, num_actions: this.action_space.length});
     }
     
     this.reward_bonus = 0.0;
@@ -271,14 +271,23 @@ class HungryAgent{
   get_observation() {
     this.Renderer.render(this.Scene, this.Camera);
     let gl = this.Renderer.getContext("webgl", {preserveDrawingBuffer: true});
-    let pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 3);
-    gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGB, gl.UNSIGNED_BYTE, pixels);
+    let pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+    gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     let rearr = [];
-    for (let i = 0; i < gl.drawingBufferWidth; i++){
-      rearr.push([]);
-      for (let j = 0; j < gl.drawingBufferHeight; j++){
-        rearr[i].push([pixels[i*3*gl.drawingBufferWidth+j*3+0]/255.0, pixels[i*3*gl.drawingBufferWidth+j*3+1]/255.0, pixels[i*3*gl.drawingBufferWidth+j*3+2]/255.0]);
+    if (this.imgshape[2] === 3){
+      for (let i = 0; i < gl.drawingBufferWidth; i++){
+        rearr.push([]);
+        for (let j = 0; j < gl.drawingBufferHeight; j++){
+          rearr[i].push([pixels[i*4*gl.drawingBufferWidth+j*4+0]/255.0, pixels[i*4*gl.drawingBufferWidth+j*4+1]/255.0, pixels[i*4*gl.drawingBufferWidth+j*4+2]/255.0]);
+        }
       }
+    } else{
+      for (let i = 0; i < gl.drawingBufferWidth; i++){
+        rearr.push([]);
+        for (let j = 0; j < gl.drawingBufferHeight; j++){
+          rearr[i].push([(pixels[i*4*gl.drawingBufferWidth+j*4+0]/255.0 + pixels[i*4*gl.drawingBufferWidth+j*4+1]/255.0 + pixels[i*4*gl.drawingBufferWidth+j*4+2]/255.0)/3 ]);
+        }
+      }      
     }
     return rearr;
   }
@@ -425,7 +434,8 @@ class HungryWorld2D {
         "W": 80,
         "H": 80,
         "algorithm": null,
-        "UI": null
+        "UI": null,
+        "imgshape": [64, 64, 3]
       };
 
       this.params_setter(this._default_params, opt);

@@ -52,18 +52,18 @@ function start(e){
         agent.observation_space = e.data.observation_space;
         agent.action_space = e.data.action_space;
         env.n_obs = e.data.n_obs;
+        agent.imgshape = e.data.imgshape;
         let policy_nn = e.data.policy_nn;
         let obs_dim = agent.observation_space.shape;
         let act_dim = agent.action_space.shape
-        let imgshape = [64,64,3];
         let model;
         if (!policy_nn){
             model = create_cnn_model_by_serialized_data(policy_nn);
         } else {
-            model = build_cnn(imgshape, [64], act_dim[0], 'tanh', 'tanh');
+            model = build_cnn(agent.imgshape, [64], act_dim[0], 'tanh', 'tanh');
         }
-        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64], cr_lr:1e-3, ac_lr:1e-3, gamma:0.99, lam:0.95, steps_per_env:2000, 
-            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:128, policy_nn: model, imgshape: imgshape});
+        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64], cr_lr:3e-4, ac_lr:3e-4, gamma:0.99, lam:0.95, steps_per_env:2000, 
+            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:128, policy_nn: model, imgshape: agent.imgshape});
         self.ppo_obj.train();
 }
 

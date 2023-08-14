@@ -327,7 +327,6 @@ class PPO{
                 let temp_values = [];
                 for(let i=0; i < this.steps_per_env; i++){
                     let nobs = tf.tensor([env.n_obs]);
-                    // let nobs_e = tf.expandDims(nobs, 0);
                     let policy_nn_val = this.policy_nn.apply(nobs);
                     let p_noisy_val = this.p_noisy(policy_nn_val, this.log_std);
                     let act1 = this.act_smp(p_noisy_val, this.low_action_space, this.high_action_space);
