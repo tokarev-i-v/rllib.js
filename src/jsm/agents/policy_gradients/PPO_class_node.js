@@ -276,14 +276,14 @@ export class PPO{
         if (opt.policy_nn) { 
             this.policy_nn = opt.policy_nn; 
         } else {
-            this.policy_nn = build_full_connected(this.obs_dim, this.hidden_sizes, this.act_dim, 'tanh', 'tanh');
+            this.policy_nn = build_full_connected(this.obs_dim, this.hidden_sizes, this.act_dim[0], 'tanh', 'tanh');
         }
         this.log_std = tf.variable(tf.fill(this.act_dim, -0.5), false, 'log_std');
         
         this.p_noisy = get_p_noisy;
         this.act_smp = act_smp_cont;
         this.p_log = get_p_log_cont;
-        this.s_values = build_full_connected(this.obs_dim, this.hidden_sizes, [1], 'tanh', null);
+        this.s_values = build_full_connected(this.obs_dim, this.hidden_sizes, 1, 'tanh', null);
         this.p_opt = tf.train.adam(this.ac_lr);
         this.v_opt = tf.train.adam(this.cr_lr);
         this.lastTime = moment();

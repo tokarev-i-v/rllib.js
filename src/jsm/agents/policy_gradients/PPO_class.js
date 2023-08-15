@@ -263,7 +263,7 @@ export class PPO{
         this.p_noisy = get_p_noisy;
         this.act_smp = act_smp_cont;
         this.p_log = get_p_log_cont;
-        this.value_nn = build_full_connected(this.obs_dim, this.hidden_sizes, [1], 'tanh', null);
+        this.value_nn = build_full_connected(this.obs_dim, this.hidden_sizes, 1, 'tanh', null);
         this.p_opt = tf.train.adam(this.ac_lr);
         this.v_opt = tf.train.adam(this.cr_lr);
     }
@@ -393,7 +393,7 @@ export class PPO{
                     return v_loss_v;
                 });
 
-                let  gradients = tf.variableGrads(v_loss, this.value_nn.getWeights());
+                let gradients = tf.variableGrads(v_loss, this.value_nn.getWeights());
                 this.v_opt.applyGradients(gradients.grads);
                 tf.dispose(gradients);
                 tf.dispose(gat_tensor);

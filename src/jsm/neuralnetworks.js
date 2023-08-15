@@ -12,7 +12,12 @@ export function build_full_connected(input_shape, hiddens_config, output_shape, 
         for(let l=0; l < hiddens_config.length; l++){
             x = tf.layers.dense({units:hiddens_config[l], activation:activation}).apply(x);
         }
-        let output = tf.layers.dense({units: output_shape, activation: last_activation}).apply(x);
+        let output;
+        if (last_activation){
+            output = tf.layers.dense({units: output_shape, activation: last_activation}).apply(x);
+        } else {
+            output = tf.layers.dense({units: output_shape}).apply(x);
+        }
         return tf.keep(tf.model({inputs:inputt, outputs:output}));
     });
 }

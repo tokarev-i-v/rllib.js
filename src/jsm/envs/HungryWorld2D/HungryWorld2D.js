@@ -50,7 +50,7 @@ class Food {
     this._view.position.x = 10;
     this.age = 0;
     this.type = 1;
-    this.reward = 9.0;
+    this.reward = 1;
     this.cleanup_ = false;
     this._view._rl = {
       type: this.type,
@@ -87,7 +87,7 @@ class Poison {
     )      
     this.age = 0;
     this.type = 2;
-    this.reward = -70000;
+    this.reward = -1;
     this.cleanup_ = false;
     this._view.position.copy(pos);
     this._view._rl = {
@@ -289,7 +289,7 @@ export class Agent{
     if (reward > 0){
       this.hungry = 0;
     } else {
-      this.hungry -= 10;
+      this.hungry -= 0.02;
     }
     reward += this.hungry;
     this.average_reward_window.add(reward);

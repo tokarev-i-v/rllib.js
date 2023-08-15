@@ -114,6 +114,42 @@ function setWeightsToModelByObject(model, weights_obj){
         }        
     ];
  */
+// function get_serialized_layers_data(model){
+
+//     if(model){
+//         let layersData = [];
+//         for(let layer of model.layers){
+//             let layer_config = layer.getConfig();
+//             let layer_name = layer.name;
+//             let layer_shape = null;
+//             let layer_activation = null;
+//             let inputSpec = null;
+//             if (layer.inputSpec){
+//                 inputSpec = layer.inputSpec;
+//             }
+//             layer_shape = layer.units;
+//             layer_activation = layer_config.activation;
+        
+//             let layer_weights = [];
+//             for (let ld of layer.getWeights()){
+//                 let weight = ld.arraySync();
+//                 layer_weights.push(weight);
+//             }
+
+//             let layerDataItem = {
+//                 "name": layer_name,
+//                 "shape": layer_shape,
+//                 "layer_weights": layer_weights,
+//                 "activation": layer_activation,
+//                 "inputSpec": inputSpec
+//             };
+//             layersData.push(layerDataItem);
+//         }
+//         return layersData;
+//     }
+//     throw Error("Model must be specified.")
+// }
+
 function get_serialized_layers_data(model){
 
     if(model){
@@ -123,27 +159,60 @@ function get_serialized_layers_data(model){
             let layer_name = layer.name;
             let layer_shape = null;
             let layer_activation = null;
-            if (layer_name.substring(0, 5) == "input"){
-                layer_shape = layer.inputSpec[0].shape;
-                if (layer_shape.length > 2){
-                    layer_shape = layer_shape.slice(1, layer_shape.length);
+            let inputSpec = null;
+            let batchInputShape = null;
+            let kernelSize = null;
+            let strides = null;
+            let filters = null;
+            let poolSize = null;
+            if (layer_name.startsWith("conv")){
+                if (layer.batchInputShape){
+                    if (layer.batchInputShape){
+                        batchInputShape = layer.batchInputShape.slice(-3);
+                    }
                 }
-            } else {
+                if (layer.kernelSize){
+                    kernelSize = layer.kernelSize[0];
+                }
+                if (layer.strides){
+                    strides = layer.strides;
+                }
+                if (layer.filters){
+                    filters = layer.filters;
+                }                
+            } else if(layer_name.startsWith("dense")) {
+                if (layer.batchInputShape){
+                    batchInputShape = layer.batchInputShape.slice(-1);
+                }
                 layer_shape = layer.units;
-                layer_activation = layer_config.activation;
+            } else if(layer_name.startsWith("max")) {
+                if (layer.strides){
+                    strides = layer.strides;
+                }
+                if (layer.poolSize){
+                    poolSize = layer.poolSize;
+                }    
+            } else if(layer_name.startsWith("flatten")) {
             }
+            layer_activation = layer_config.activation;
+        
             let layer_weights = [];
             for (let ld of layer.getWeights()){
                 let weight = ld.arraySync();
                 layer_weights.push(weight);
             }
-
             let layerDataItem = {
                 "name": layer_name,
                 "shape": layer_shape,
                 "layer_weights": layer_weights,
-                "activation": layer_activation
-            }
+                "activation": layer_activation,
+                "inputSpec": inputSpec,
+                "batchInputShape": batchInputShape,
+                "kernelSize": kernelSize,
+                "strides": strides,
+                "filters": filters,
+                "poolSize": poolSize,
+            };
             layersData.push(layerDataItem);
         }
         return layersData;
@@ -151,17 +220,21 @@ function get_serialized_layers_data(model){
     throw Error("Model must be specified.")
 }
 
-function create_model_by_serialized_data(model_weight_data){
+
+function create_fc_model_by_serialized_data(model_weight_data){
     if(model_weight_data){
-        let inputt = tf.input({shape: model_weight_data[0].shape});
-        let cur_layer = inputt;
+        let model = tf.sequential();
+        let inputSpec = [];
+        for (let k of Object.keys(model_weight_data[0].inputSpec[0].axes)){
+            inputSpec.push(model_weight_data[0].inputSpec[0].axes[k]);
+        }
+        model.add(tf.layers.dense({inputShape: inputSpec, units: model_weight_data[0].shape, activation: model_weight_data[0].activation}));
         for(let layer of model_weight_data.slice(1, model_weight_data.length)){
             let layer_name = layer.name;
             let layer_shape = layer.shape;
             let layer_activation = layer.activation;
-            cur_layer = tf.layers.dense({units: layer_shape, activation: layer_activation}).apply(cur_layer);
+            model.add(tf.layers.dense({units: layer_shape, activation: layer_activation}));
         }
-        let model = tf.model({inputs: inputt, outputs: cur_layer});
         for (let layer_number in model_weight_data){
             let layer_weights = model_weight_data[layer_number].layer_weights;
             if (layer_weights && layer_weights.length > 0){
@@ -176,14 +249,42 @@ function create_model_by_serialized_data(model_weight_data){
     throw Error("Model must be specified.")
 }
 
-function create_cnn_model_by_serialized_data(model_weight_data){
+function create_model_by_serialized_data(model_weight_data){
     if(model_weight_data){
         let model = tf.sequential();
+        if (model_weight_data[0].name.startsWith("conv")){
+            model.add(tf.layers.conv2d({
+                inputShape: model_weight_data[0].batchInputShape, 
+                kernelSize: model_weight_data[0].kernelSize, 
+                filters: model_weight_data[0].filters,
+                activation: model_weight_data[0].activation
+            }));    
+        } else  if (model_weight_data[0].name.startsWith("dense")){
+            model.add(tf.layers.dense({inputShape: model_weight_data[0].batchInputShape, units: model_weight_data[0].shape, activation: model_weight_data[0].activation}));    
+        }
         for(let layer of model_weight_data.slice(1, model_weight_data.length)){
-            let layer_name = layer.name;
-            let layer_shape = layer.shape;
-            let layer_activation = layer.activation;
-            model.add(tf.layers.dense({units: layer_shape, activation: layer_activation}));
+            if (layer.name.startsWith("conv")){
+                model.add(tf.layers.conv2d({
+                    inputShape: layer.batchInputShape, 
+                    kernelSize: layer.kernelSize, 
+                    filters: layer.filters,
+                    activation: layer.activation
+                }));
+            } else if(layer.name.startsWith("dense")) {
+                model.add(tf.layers.dense({
+                    units: layer.shape, 
+                    activation: layer.activation
+                }));    
+            } else if(layer.name.startsWith("max")) {
+                model.add(tf.layers.maxPooling2d({
+                    strides: layer.strides,
+                    poolSize: layer.poolSize
+                }));
+            }else if(layer.name.startsWith("flatten")) {
+                model.add(tf.layers.flatten({
+                    activation: layer.activation
+                }));
+            }
         }
         for (let layer_number in model_weight_data){
             let layer_weights = model_weight_data[layer_number].layer_weights;

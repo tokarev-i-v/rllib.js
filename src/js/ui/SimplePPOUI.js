@@ -44,7 +44,7 @@ class SimpleUI{
             this.setWeightsButton = document.createElement("Button");
             this.setWeightsButton.addEventListener("click", this.setWeights.bind(this));
             this.setWeightsButton.style.left = "0px";
-            this.setWeightsButton.style.top = "150px";
+            this.setWeightsButton.style.top = "300px";
             this.setWeightsButton.style.width = "100px";
             this.setWeightsButton.style.height = "40px";            
             this.setWeightsButton.id = "ppo_ui_set_weights_button";
@@ -63,18 +63,29 @@ class SimpleUI{
 
     initPolicyWeightsPathInput(){
         if(document){
-            this.policyWeightsPath = document.createElement("input");
-            this.policyWeightsPath.type = "text";
-            this.policyWeightsPath.style.left = "0px";
-            this.policyWeightsPath.style.top = "100px";          
-            this.policyWeightsPath.id = "ppo_ui_set_policy_weight_input";
-            this.policyWeightsPath.style.zIndex = 10;
-            this.policyWeightsPath.style.position = 'absolute';
+            this.policyWeightsJSON = document.createElement("input");
+            this.policyWeightsJSON.type = "file";
+            this.policyWeightsJSON.style.left = "0px";
+            this.policyWeightsJSON.style.top = "100px";          
+            this.policyWeightsJSON.id = "ui_policy_weights_json_input";
+            this.policyWeightsJSON.style.zIndex = 10;
+            this.policyWeightsJSON.style.position = 'absolute';
+
+
+            this.policyWeights = document.createElement("input");
+            this.policyWeights.type = "file";
+            this.policyWeights.style.left = "0px";
+            this.policyWeights.style.top = "150px";          
+            this.policyWeights.id = "ui_policy_weights_input";
+            this.policyWeights.style.zIndex = 10;
+            this.policyWeights.style.position = 'absolute';
 
             if(this.parent){
-                this.parent.appendChild(this.policyWeightsPath);
+                this.parent.appendChild(this.policyWeightsJSON);
+                this.parent.appendChild(this.policyWeights);
             } else {
-                document.body.appendChild(this.policyWeightsPath);
+                document.body.appendChild(this.policyWeightsJSON);
+                document.body.appendChild(this.policyWeights);
                 this.parent = document.body;
             }
         }
@@ -82,32 +93,51 @@ class SimpleUI{
 
     initValueWeightsPathInput(){
         if(document){
-            this.valueWeightsPath = document.createElement("input");
-            this.valueWeightsPath.type = "text";
-            this.valueWeightsPath.style.left = "0px";
-            this.valueWeightsPath.style.top = "130px";          
-            this.valueWeightsPath.id = "ppo_ui_set_value_weight_input";
-            this.valueWeightsPath.style.zIndex = 10;
-            this.valueWeightsPath.style.position = 'absolute';
+            this.valueWeightsJSON = document.createElement("input");
+            this.valueWeightsJSON.type = "file";
+            this.valueWeightsJSON.style.left = "0px";
+            this.valueWeightsJSON.style.top = "200px";          
+            this.valueWeightsJSON.id = "ui_value_weights_json_input";
+            this.valueWeightsJSON.style.zIndex = 10;
+            this.valueWeightsJSON.style.position = 'absolute';
+
+
+            this.valueWeights = document.createElement("input");
+            this.valueWeights.type = "file";
+            this.valueWeights.style.left = "0px";
+            this.valueWeights.style.top = "250px";          
+            this.valueWeights.id = "ui_value_weights_input";
+            this.valueWeights.style.zIndex = 10;
+            this.valueWeights.style.position = 'absolute';
 
             if(this.parent){
-                this.parent.appendChild(this.valueWeightsPath);
+                this.parent.appendChild(this.valueWeightsJSON);
+                this.parent.appendChild(this.valueWeights);
             } else {
-                document.body.appendChild(this.valueWeightsPath);
+                document.body.appendChild(this.valueWeightsJSON);
+                document.body.appendChild(this.valueWeights);
                 this.parent = document.body;
             }
         }
     }
 
 
-    setWeights(){
-        let policy_path = window.location.origin + "/" + this.policyWeightsPath.value;
-        let value_path = window.location.origin + "/" + this.valueWeightsPath.value;
-        this.policy_nn = tf.loadLayersModel(policy_path);    
+    async setWeights(){
+
+        const uploadPolicyJSONInput = document.getElementById('ui_policy_weights_json_input');
+        const uploadPolicyWeightsInput = document.getElementById('ui_policy_weights_input');
+        let policy_model = await tf.loadLayersModel(tf.io.browserFiles(
+         [uploadPolicyJSONInput.files[0], uploadPolicyWeightsInput.files[0]]));
+
+        const uploadValueJSONInput = document.getElementById('ui_value_weights_json_input');
+        const uploadValueWeightsInput = document.getElementById('ui_value_weights_input');
+        let value_model = await tf.loadLayersModel(tf.io.browserFiles(
+        [uploadValueJSONInput.files[0], uploadValueWeightsInput.files[0]]));
+ 
         this.worker.postMessage({
-            msg_type: "load_weigths_by_path",
-            policy_weights_path: policy_path,
-            value_weights_path: value_path,
+            msg_type: "set_weigths",
+            policy_weights: get_serialized_layers_data(policy_model),
+            value_weights: get_serialized_layers_data(value_model),
         });
     }
 
