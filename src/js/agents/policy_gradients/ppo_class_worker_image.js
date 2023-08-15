@@ -57,8 +57,8 @@ function start(e){
         let obs_dim = agent.observation_space.shape;
         let act_dim = agent.action_space.shape
         let model;
-        if (!policy_nn){
-            model = create_cnn_model_by_serialized_data(policy_nn);
+        if (policy_nn){
+            model = create_model_by_serialized_data(policy_nn);
         } else {
             model = build_cnn(agent.imgshape, [64], act_dim[0], 'tanh', 'tanh');
         }
