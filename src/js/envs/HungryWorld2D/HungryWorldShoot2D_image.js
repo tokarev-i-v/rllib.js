@@ -54,7 +54,6 @@ class Food {
   dispose(){
     this._view.geometry.dispose();
   }
-
 }
 
 /**
@@ -72,7 +71,7 @@ class Poison {
     this._view = new THREE.Mesh(
       new THREE.SphereBufferGeometry(this.rad,32,10),
       new THREE.MeshBasicMaterial({color: 0xFFF422})
-    )      
+    )
     this.age = 0;
     this.type = 2;
     this.reward = -3;
@@ -95,7 +94,6 @@ class Poison {
   dispose(){
     this._view.geometry.dispose();
   }
-
 }
 
 
@@ -129,6 +127,7 @@ class Bullet {
   set position(vec){
     this._view.position.copy(vec);
   }
+
   dispose(){
     this._view.geometry.dispose();
   }
@@ -176,7 +175,7 @@ class HungryAgent{
     document.body.appendChild(this.Container);
 
     this.Scene = opt.Scene;
-    this.Camera = new THREE.PerspectiveCamera(45, this.imgshape[0] / this.imgshape[1], 1, 10);    
+    this.Camera = new THREE.PerspectiveCamera(45, this.imgshape[0] / this.imgshape[1], 1, 30);    
     this._view = new THREE.Mesh(
       new THREE.BoxBufferGeometry(this.rad,this.rad,this.rad),
       new THREE.MultiMaterial( materials )
@@ -563,13 +562,19 @@ class HungryWorld2D {
         el.update(delta);
         let it = this.controlBulletCollision(el, this.items);
         if(it){
-          if(it.type === 1) this.agents[0].digestion_signal += it.reward;
-          if(it.type === 2) this.agents[0].digestion_signal += it.reward;
+          if(it.type === 1) {
+            this.agents[0].digestion_signal += it.reward;
+            a.greens_count += 1;
+          }
+          if(it.type === 2) {
+            this.agents[0].digestion_signal += it.reward;
+            a.yellows_count += 1;
+          }
           this.removeItem(it);
           this.removeBullet(el);
         } else if (el.way.length() > 20){
           this.removeBullet(el);
-          this.agents[0].digestion_signal += -10;
+          this.agents[0].digestion_signal += -1;
         }
       }
     }
@@ -597,8 +602,8 @@ class HungryWorld2D {
 
     removeItem(it){
       this.Scene.remove(it.view);
-      this.items.splice(this.items.indexOf(it), 1);
       it.dispose();
+      this.items.splice(this.items.indexOf(it), 1);
     }
 
     step(action) {
@@ -624,10 +629,10 @@ class HungryWorld2D {
       this.agents[0].rot = action[0];
       this.agents[0].speed = action[1];  
 
-      // if (action[2] > 0.5){
-      //   let bullet = this.agents[0].fire();
-      //   this.addBullet(bullet);
-      // }
+      if (action[2] > 0.5){
+        let bullet = this.agents[0].fire();
+        this.addBullet(bullet);
+      }
       if (this.need_reset_env){
         this.reset();
         this.need_reset_env = 0;

@@ -62,8 +62,8 @@ function start(e){
         } else {
             model = build_cnn(agent.imgshape, [64], act_dim[0], 'tanh', 'tanh');
         }
-        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64], cr_lr:3e-4, ac_lr:3e-4, gamma:0.99, lam:0.95, steps_per_env:2000, 
-            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:128, policy_nn: model, imgshape: agent.imgshape});
+        self.ppo_obj = new PPO({env: env, agent: agent, hidden_sizes:[64], cr_lr:5e-4, ac_lr:5e-4, gamma:0.99, lam:0.95, steps_per_env:2000, 
+            number_envs:1, eps:0.15, actor_iter:6, critic_iter:10, num_epochs:5000, minibatch_size:256, policy_nn: model, imgshape: agent.imgshape});
         self.ppo_obj.train();
 }
 

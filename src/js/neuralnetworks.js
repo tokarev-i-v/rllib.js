@@ -24,13 +24,13 @@ function build_cnn(input_shape, hiddens_config, output_shape, activation='relu',
     let model = tf.sequential();
     model.add(tf.layers.conv2d({
         inputShape: [input_shape[0], input_shape[1], input_shape[2]],
-        kernelSize: 4,
-        filters: 8,
+        kernelSize: 2,
+        filters: 4,
         activation: 'relu'
     }));
     model.add(tf.layers.conv2d({
-        kernelSize: 16,
-        filters: 8,
+        kernelSize: 8,
+        filters: 4,
         activation: 'relu'
     }));
     model.add(tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]}));

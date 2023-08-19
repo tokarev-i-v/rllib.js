@@ -51,6 +51,9 @@ class Food {
   set position(vec){
     this._view.position.copy(vec);
   }
+  dispose(){
+    this._view.geometry.dispose();
+  }  
 }
 
 /**
@@ -88,6 +91,9 @@ class Poison {
   set position(vec){
     this._view.position.copy(vec);
   }
+  dispose(){
+    this._view.geometry.dispose();
+  }  
 }
 
 
@@ -120,6 +126,9 @@ class Bullet {
   }
   set position(vec){
     this._view.position.copy(vec);
+  }
+  dispose(){
+    this._view.geometry.dispose();
   }
 
   update(time){
@@ -654,6 +663,7 @@ class HungryWorld2D {
     removeItem(it){
       this.Scene.remove(it.view);
       this.items.splice(this.items.indexOf(it), 1);
+      it.dispose();
     }
 
     step(action) {
@@ -671,6 +681,7 @@ class HungryWorld2D {
       let index = this.bullets.indexOf(bullet);
       this.bullets.splice(index, 1);
       this.Scene.remove(bullet.view);
+      bullet.dispose();
     }
 
     tick(action) {

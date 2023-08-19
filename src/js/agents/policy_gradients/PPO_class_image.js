@@ -161,9 +161,9 @@ class Buffer_a{
     }
     get_batch(){
         return tf.tidy(()=> {
-            let adv = tf.keep(tf.tensor(this.adv));
+            let adv = tf.tensor(this.adv);
             let ob = tf.keep(tf.tensor(this.ob));
-            let ac = tf.tensor(this.ac);
+            let ac = tf.keep(tf.tensor(this.ac));
             let rtg = tf.keep(tf.tensor(this.rtg));
             
             let norm_adv = tf.keep(adv.sub(adv.mean()).div(tf.moments(adv).variance.sqrt().add(tf.scalar(1e-10))));
@@ -172,6 +172,12 @@ class Buffer_a{
     }
     len(){
         return this.ob.length;
+    }
+    flush(){
+        this.adv = [];
+        this.ob = [];
+        this.ac = [];
+        this.rtg = [];
     }
 }
 
@@ -365,6 +371,8 @@ class PPO{
                 let nobs = tf.tensor([env.n_obs]);
                 let last_v = this.value_nn.apply(nobs);
                 buffer.store(temp_states, temp_rewards, temp_actions, temp_values, last_v.arraySync()[0][0]);
+                nobs.dispose();
+                last_v.dispose();
             }        
 
         let [obs_batch, act_batch, adv_batch, rtg_batch] = buffer.get_batch();
@@ -418,7 +426,8 @@ class PPO{
         act_batch.dispose();
         adv_batch.dispose();
         rtg_batch.dispose();
-
+        // shuffled_batch.dispose();
+        buffer.flush();
         }
     }
     async eval(){
