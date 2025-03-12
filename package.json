@@ -84,5 +84,5 @@
     "watcherGlob": "**"
   },
   "repository": "https://github.com/polyzer/rllib.js.git",
-  "author": "polyzer <realpolyzer@yandex.ru>"
+  "author": "tokarev-i-v"
 }
